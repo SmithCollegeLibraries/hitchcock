@@ -1,5 +1,6 @@
 from django.db import models
 from django.dispatch import receiver
+from django.conf import settings
 import os
 
 class Upload(models.Model):
@@ -72,8 +73,8 @@ class Text(Upload):
 
 ### Video i.e. mp4 ###
 class Video(Upload):
-    upload = models.FileField(upload_to='av/video/', max_length=1024)
+    upload = models.FileField(upload_to=settings.AV_SUBDIR_NAME + 'video/', max_length=1024)
 
 # Audio i.e. mp3
 class Audio(Upload):
-    upload = models.FileField(upload_to='av/audio/', max_length=1024)
+    upload = models.FileField(upload_to=settings.AV_SUBDIR_NAME + 'audio/', max_length=1024)
