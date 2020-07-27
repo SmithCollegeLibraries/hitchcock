@@ -74,7 +74,18 @@ class Text(Upload):
 ### Video i.e. mp4 ###
 class Video(Upload):
     upload = models.FileField(upload_to=settings.AV_SUBDIR_NAME + 'video/', max_length=1024)
+    @property
+    def url(self):
+        if self.id is not None:
+            return settings.BASE_URL + "/videos/%s" % self.id
+        else:
+            return None
 
 # Audio i.e. mp3
 class Audio(Upload):
     upload = models.FileField(upload_to=settings.AV_SUBDIR_NAME + 'audio/', max_length=1024)
+    def url(self):
+        if self.id is not None:
+            return settings.BASE_URL + "/audio/%s" % self.id
+        else:
+            return None

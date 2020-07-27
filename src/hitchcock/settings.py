@@ -26,7 +26,7 @@ SECRET_KEY = 'a@hl$g%4rql0evai1zcnm_ct*o%j#s-f0%_f7fb4f7qj^sygnb'
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+BASE_URL = "http://localhost:8000"
 
 # Application definition
 

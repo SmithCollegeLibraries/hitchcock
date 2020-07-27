@@ -11,13 +11,13 @@ admin.site.register(models.Text, TextAdmin)
 ### VIDEOs ###
 class VideoAdmin(admin.ModelAdmin):
     list_display = ('title', 'name', 'identifier', 'size')
-    readonly_fields = ('size', 'created', 'modified')
+    readonly_fields = ('size', 'created', 'modified', 'url')
 
 admin.site.register(models.Video, VideoAdmin)
 
 ### AUDIO ###
 class AudioAdmin(admin.ModelAdmin):
     list_display = ('title', 'name', 'identifier', 'size')
-    readonly_fields = ('size', 'created', 'modified')
+    readonly_fields = ('size', 'created', 'modified', 'url')
 
 admin.site.register(models.Audio, AudioAdmin)
