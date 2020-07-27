@@ -1,6 +1,7 @@
 from django.db import models
 from django.dispatch import receiver
 from django.conf import settings
+from .validators import validate_video, validate_audio, validate_text
 import os
 
 class Upload(models.Model):
@@ -56,12 +57,17 @@ def text_upload_path(instance, filename):
     # Reimpliment filename sanitization, and collision avoidance
     storage = instance.upload.storage
     valid_filename = storage.get_valid_name(filename)
-    proposed_path = 'text/' + lookup[instance.type] + valid_filename
+    proposed_path = settings.TEXT_SUBDIR_NAME + lookup[instance.type] + valid_filename
     available_filename = storage.get_available_name(proposed_path)
     return available_filename
 
 class Text(Upload):
-    upload = models.FileField(upload_to=text_upload_path, max_length=1024)
+    upload = models.FileField(
+        upload_to=text_upload_path,
+        max_length=1024,
+        validators=[validate_text,],
+        help_text="pdf format only"
+    )
     TEXT_TYPES = [
         ('article', 'Article'),
         ('book_excerpt', 'Book (excerpt)'),
@@ -70,10 +76,19 @@ class Text(Upload):
     ]
 
     type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article')
+    def url(self):
+        if self.id is not None:
+            return settings.TEXTS_ENDPOINT + self.upload.name.replace(settings.TEXT_SUBDIR_NAME, '')
+        else:
+            return None
 
 ### Video i.e. mp4 ###
 class Video(Upload):
-    upload = models.FileField(upload_to=settings.AV_SUBDIR_NAME + 'video/', max_length=1024)
+    upload = models.FileField(
+        upload_to=settings.AV_SUBDIR_NAME + 'video/',
+        max_length=1024,
+        validators=[validate_video,],
+        help_text="mp4 format only")
     @property
     def url(self):
         if self.id is not None:
@@ -83,7 +98,11 @@ class Video(Upload):
 
 # Audio i.e. mp3
 class Audio(Upload):
-    upload = models.FileField(upload_to=settings.AV_SUBDIR_NAME + 'audio/', max_length=1024)
+    upload = models.FileField(
+        upload_to=settings.AV_SUBDIR_NAME + 'audio/',
+        max_length=1024,
+        validators=[validate_audio,],
+        help_text="mp3 format only")
     def url(self):
         if self.id is not None:
             return settings.BASE_URL + "/audio/%s" % self.id

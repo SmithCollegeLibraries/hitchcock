@@ -11,7 +11,7 @@ hitchcock_admin = HitchcockAdminSite(name='hitchcockadmin')
 ### TEXTs ###
 class TextAdmin(admin.ModelAdmin):
     list_display = ('title', 'name', 'type', 'identifier', 'size')
-    readonly_fields = ('size', 'created', 'modified')
+    readonly_fields = ('size', 'created', 'modified', 'url')
 
 hitchcock_admin.register(models.Text, TextAdmin)
 
