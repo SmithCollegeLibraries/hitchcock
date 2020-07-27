@@ -30,17 +30,8 @@ class Upload(models.Model):
         return '%0.2fMB' % (self.upload.size/1000000)
 
     def __str__(self):
-        return self.upload.name
+        return self.title
 
-@receiver(models.signals.post_delete, sender=Upload)
-def auto_delete_file_on_delete(sender, instance, **kwargs):
-    """
-    Deletes file from filesystem
-    when corresponding `Upload` object is deleted.
-    """
-    if instance.upload:
-        if os.path.isfile(instance.upload.path):
-            os.remove(instance.upload.path)
 
 ### Text i.e. pdf ###
 def text_upload_path(instance, filename):
@@ -108,3 +99,16 @@ class Audio(Upload):
             return settings.BASE_URL + "/audio/%s" % self.id
         else:
             return None
+
+# Handle deletion
+@receiver(models.signals.post_delete, sender=Text)
+@receiver(models.signals.post_delete, sender=Video)
+@receiver(models.signals.post_delete, sender=Audio)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem
+    when corresponding `Upload` object is deleted.
+    """
+    if instance.upload:
+        if os.path.isfile(instance.upload.path):
+            os.remove(instance.upload.path)
