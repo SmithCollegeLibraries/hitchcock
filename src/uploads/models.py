@@ -1,10 +1,11 @@
 from django.db import models
+from polymorphic.models import PolymorphicModel
 from django.dispatch import receiver
 from django.conf import settings
 from .validators import validate_video, validate_audio, validate_text
 import os
 
-class Upload(models.Model):
+class Upload(PolymorphicModel):
     """ Generic "Upload" model for subclassing to the content specific models.
     """
     FORM_TYPES = [
