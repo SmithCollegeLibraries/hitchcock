@@ -18,17 +18,18 @@ class Upload(PolymorphicModel):
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
+    size = models.IntegerField(blank=True, null=True)
     @property
     def name(self):
         if self.upload.name is not None:
             return self.upload.name.split('/')[-1]
         else:
             return None
-    @property
-    def size(self):
-        """Return size in MB
-        """
-        return '%0.2fMB' % (self.upload.size/1000000)
+    # @property
+    # def size(self):
+    #     """Return size in MB
+    #     """
+    #     return '%0.2fMB' % (self.upload.size/1000000)
 
     def __str__(self):
         return self.title
@@ -67,7 +68,7 @@ class Text(Upload):
         ('other', 'Other'),
     ]
 
-    type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article')
+    text_type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article')
     def url(self):
         if self.id is not None:
             return settings.TEXTS_ENDPOINT + self.upload.name.replace(settings.TEXT_SUBDIR_NAME, '')
@@ -113,3 +114,12 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
     if instance.upload:
         if os.path.isfile(instance.upload.path):
             os.remove(instance.upload.path)
+
+# Calculate size and save it to the parent Upload object
+@receiver(models.signals.pre_save, sender=Text)
+@receiver(models.signals.pre_save, sender=Video)
+@receiver(models.signals.pre_save, sender=Audio)
+def update_upload_size(sender, instance, **kwargs):
+    """Saves the file size to the Upload model
+    """
+    instance.size = instance.upload.size
