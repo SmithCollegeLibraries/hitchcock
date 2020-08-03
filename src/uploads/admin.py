@@ -1,6 +1,7 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
-from .models import Upload, Video, Audio, Text
+from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicInline
+from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text
 
 class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
@@ -20,18 +21,40 @@ class AudioAdmin(UploadChildAdmin):
     list_display = ('title',)
     readonly_fields = ('size', 'created', 'modified', 'url')
 
+class AudioAlubmInline(admin.TabularInline):
+    model = AudioTrack
+
+@admin.register(AudioAlbum)
+class AudioAlbumAdmin(UploadChildAdmin):
+    base_model = AudioAlbum  # Explicitly set here!
+#    show_in_index = True  # makes child model admin visible in main admin site
+    list_display = ('title',)
+    readonly_fields = ('size', 'created', 'modified', 'url', 'album_directory')
+    inlines = [AudioAlubmInline,]
+
 @admin.register(Text)
 class TextAdmin(UploadChildAdmin):
     base_model = Text  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
     list_display = ('title',)
-    readonly_fields = ('size', 'created', 'modified', 'url')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'text_type')
+    def get_readonly_fields(self, request, obj=None):
+        """If obj is None that means the object is being created. In this case
+        return the normal list of readonly_fields, minus 'text_type'
+        so that the user can set it durring creation. Otherwise return all of
+        them, including text_type, so that the user cannot change this field
+        after creation.
+        """
+        if obj is None:
+            return ['size', 'created', 'modified', 'url']
+        else:
+            return ['size', 'created', 'modified', 'url', 'text_type']
 
 @admin.register(Upload)
 class UploadParentAdmin(PolymorphicParentModelAdmin):
     """ The parent model admin """
     base_model = Upload  # Optional, explicitly set here.
-    child_models = (Video, Audio, Text)
+    child_models = (Video, Audio, AudioAlbum, Text)
     list_filter = (PolymorphicChildModelFilter,)  # This is optional.
     list_display = ( 'title', 'type', 'identifier', 'created', 'modified', 'size')
     def type(self, obj):
