@@ -17,6 +17,7 @@ class Upload(PolymorphicModel):
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=1024)
+    full_record_url = models.URLField(max_length=1024, help_text="E.g. Libguides Reserves system record", blank=True, null=True)
     identifier = models.CharField(max_length=512, help_text='barcode, ISBN, etc.')
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
     modified = models.DateTimeField(auto_now=True)
