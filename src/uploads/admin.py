@@ -21,23 +21,16 @@ class AudioAdmin(UploadChildAdmin):
     list_display = ('title',)
     readonly_fields = ('size', 'created', 'modified', 'url')
 
-class AudioAlubmInline(StackedPolymorphicInline):
-    model = AudioAlbum
-
-    class AudioTracksInline(StackedPolymorphicInline.Child):
-        model = AudioTrack
-
-    child_inlines = (
-        AudioTracksInline,
-    )
+class AudioAlubmInline(admin.TabularInline):
+    model = AudioTrack
 
 @admin.register(AudioAlbum)
-class AudioAlbumAdmin(PolymorphicInlineSupportMixin, UploadChildAdmin):
+class AudioAlbumAdmin(UploadChildAdmin):
     base_model = AudioAlbum  # Explicitly set here!
-    show_in_index = True  # makes child model admin visible in main admin site
+#    show_in_index = True  # makes child model admin visible in main admin site
     list_display = ('title',)
-    readonly_fields = ('size', 'created', 'modified', 'url')
-    inlines = (AudioAlubmInline,)
+    readonly_fields = ('size', 'created', 'modified', 'url', 'album_directory')
+    inlines = [AudioAlubmInline,]
 
 @admin.register(Text)
 class TextAdmin(UploadChildAdmin):

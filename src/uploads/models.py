@@ -3,6 +3,7 @@ from polymorphic.models import PolymorphicModel
 from django.dispatch import receiver
 from django.conf import settings
 from .validators import validate_video, validate_audio, validate_text
+from django.core.files.storage import DefaultStorage
 import os
 
 class Upload(PolymorphicModel):
@@ -103,24 +104,58 @@ class Audio(Upload):
             return None
 
 class AudioAlbum(Upload):
+    album_directory = models.CharField(max_length=512, blank=True, null=True)
+    
     def url(self):
         if self.id is not None:
             return settings.BASE_URL + "/audio-album/%s" % self.id
         else:
             return None
 
-class AudioTrack(Upload):
+@receiver(models.signals.pre_save, sender=AudioAlbum)
+def set_album_directory(sender, instance, **kwargs):
+    """
+    Sets the album_directory field for a newly created AudioAlbum object.
+    Does not run after creation. I.e. this field cannot be changed after
+    the object is saved. Cheap way to make it so that the user can make minor
+    changes to the title after saving without accidentally altering the
+    target album dir.
+    """
+    if instance.album_directory is None:
+        storage = DefaultStorage()
+        valid_filename = storage.get_valid_name(instance.title)
+        proposed_path = settings.AUDIO_ALBUMS_SUBDIR_NAME + valid_filename
+        available_filename = storage.get_available_name(proposed_path)
+        instance.album_directory = available_filename
+
+def audiotrack_upload_path(instance, filename):
+    # Get parent album upload directory
+    base_path = instance.album.album_directory
+    # Reimpliment filename sanitization, and collision avoidance
+    storage = instance.upload.storage
+    valid_filename = storage.get_valid_name(filename)
+    proposed_path = base_path + '/' + valid_filename
+    available_filename = storage.get_available_name(proposed_path)
+    return available_filename
+
+class AudioTrack(models.Model):
     upload = models.FileField(
-        upload_to=settings.AV_SUBDIR_NAME + 'audio/',
+        upload_to=audiotrack_upload_path,
         max_length=1024,
         validators=[validate_audio,],
         help_text="mp3 format only")
     album = models.ForeignKey(AudioAlbum, on_delete=models.CASCADE)
 
+    def __str__(self):
+        if self.upload.name is not None:
+            return self.upload.name.split('/')[-1]
+
+
 # Handle deletion
 @receiver(models.signals.post_delete, sender=Text)
 @receiver(models.signals.post_delete, sender=Video)
 @receiver(models.signals.post_delete, sender=Audio)
+@receiver(models.signals.post_delete, sender=AudioTrack)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
     """
     Deletes file from filesystem
