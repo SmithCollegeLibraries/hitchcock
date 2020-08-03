@@ -170,19 +170,39 @@ def update_album_size(sender, instance, **kwargs):
     Update album size calculation after each time a track is saved or updated.
     """
     sum_size = 0
-    new_track_size = instance.upload.size
+    try:
+        new_track_size = instance.upload.size
+    except FileNotFoundError:
+        new_track_size = 0
     sum_size += new_track_size
     existing_tracks = instance.album.audiotrack_set.all()
     for track in existing_tracks:
-        sum_size += track.upload.size
+        try:
+            track_size = track.upload.size
+        except FileNotFoundError:
+            track_size = 0
+        sum_size += track_size
     instance.album.size = sum_size
     instance.album.save()
+        
+
+@receiver(models.signals.post_delete, sender=AudioTrack)
+def auto_delete_track_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem
+    when corresponding `Upload` object is deleted.
+    """
+    if instance.upload:
+        if os.path.isfile(instance.upload.path):
+            os.remove(instance.upload.path)
+
+    # AND update album total size
+    update_album_size(sender, instance, **kwargs)
 
 # Handle deletion
 @receiver(models.signals.post_delete, sender=Text)
 @receiver(models.signals.post_delete, sender=Video)
 @receiver(models.signals.post_delete, sender=Audio)
-@receiver(models.signals.post_delete, sender=AudioTrack)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
     """
     Deletes file from filesystem
