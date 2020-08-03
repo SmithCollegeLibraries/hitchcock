@@ -4,6 +4,8 @@ from django.dispatch import receiver
 from django.conf import settings
 from .validators import validate_video, validate_audio, validate_text
 from django.core.files.storage import DefaultStorage
+from django.db.models.query_utils import DeferredAttribute
+import uuid
 import os
 
 class Upload(PolymorphicModel):
@@ -13,7 +15,7 @@ class Upload(PolymorphicModel):
         ('digitized', 'Digitized'),
         ('born_digital', 'Born Digital'),
     ]
-    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=1024)
     identifier = models.CharField(max_length=512, help_text='barcode, ISBN, etc.')
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
@@ -71,7 +73,7 @@ class Text(Upload):
 
     text_type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article', help_text="Text type cannot be changed after saving.")
     def url(self):
-        if self.id is not None:
+        if self.created is not None:
             return settings.TEXTS_ENDPOINT + self.upload.name.replace(settings.TEXT_SUBDIR_NAME, '')
         else:
             return None
@@ -85,7 +87,7 @@ class Video(Upload):
         help_text="mp4 format only")
     @property
     def url(self):
-        if self.id is not None:
+        if self.created is not None:
             return settings.BASE_URL + "/videos/%s" % self.id
         else:
             return None
@@ -98,7 +100,8 @@ class Audio(Upload):
         validators=[validate_audio,],
         help_text="mp3 format only")
     def url(self):
-        if self.id is not None:
+        print(type(self.created))
+        if self.created is not None:
             return settings.BASE_URL + "/audio/%s" % self.id
         else:
             return None
@@ -107,7 +110,7 @@ class AudioAlbum(Upload):
     album_directory = models.CharField(max_length=512, blank=True, null=True)
     
     def url(self):
-        if self.id is not None:
+        if self.created is not None:
             return settings.BASE_URL + "/audio-album/%s" % self.id
         else:
             return None
