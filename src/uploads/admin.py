@@ -1,30 +1,38 @@
 from django.contrib import admin
-from . import models
+from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
+from .models import Upload, Video, Audio, Text
 
-class HitchcockAdminSite(admin.AdminSite):
-    site_header = 'Hitchcock Smith Libraries e-reserves administration'
-    site_title = 'Hitchcock Smith Libraries e-reserves administration'
-    site_url = None
+class UploadChildAdmin(PolymorphicChildModelAdmin):
+    """ Base admin class for all child models """
+    base_model = Upload  # Optional, explicitly set here.
 
-hitchcock_admin = HitchcockAdminSite(name='hitchcockadmin')
-
-### TEXTs ###
-class TextAdmin(admin.ModelAdmin):
-    list_display = ('title', 'name', 'type', 'identifier', 'size')
+@admin.register(Video)
+class VideoAdmin(UploadChildAdmin):
+    base_model = Video  # Explicitly set here!
+#    show_in_index = True  # makes child model admin visible in main admin site
+    list_display = ('title',)
     readonly_fields = ('size', 'created', 'modified', 'url')
 
-hitchcock_admin.register(models.Text, TextAdmin)
-
-### VIDEOs ###
-class VideoAdmin(admin.ModelAdmin):
-    list_display = ('title', 'name', 'identifier', 'size')
+@admin.register(Audio)
+class AudioAdmin(UploadChildAdmin):
+    base_model = Audio  # Explicitly set here!
+#    show_in_index = True  # makes child model admin visible in main admin site
+    list_display = ('title',)
     readonly_fields = ('size', 'created', 'modified', 'url')
 
-hitchcock_admin.register(models.Video, VideoAdmin)
-
-### AUDIO ###
-class AudioAdmin(admin.ModelAdmin):
-    list_display = ('title', 'name', 'identifier', 'size')
+@admin.register(Text)
+class TextAdmin(UploadChildAdmin):
+    base_model = Text  # Explicitly set here!
+#    show_in_index = True  # makes child model admin visible in main admin site
+    list_display = ('title',)
     readonly_fields = ('size', 'created', 'modified', 'url')
 
-hitchcock_admin.register(models.Audio, AudioAdmin)
+@admin.register(Upload)
+class UploadParentAdmin(PolymorphicParentModelAdmin):
+    """ The parent model admin """
+    base_model = Upload  # Optional, explicitly set here.
+    child_models = (Video, Audio, Text)
+    list_filter = (PolymorphicChildModelFilter,)  # This is optional.
+    list_display = ( 'title', 'type', 'identifier', 'created', 'modified', 'size')
+    def type(self, obj):
+        return obj.polymorphic_ctype
