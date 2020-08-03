@@ -155,12 +155,28 @@ class AudioTrack(models.Model):
         max_length=1024,
         validators=[validate_audio,],
         help_text="mp3 format only")
+    title = models.CharField(max_length=512)
+    modified = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
     album = models.ForeignKey(AudioAlbum, on_delete=models.CASCADE)
 
     def __str__(self):
         if self.upload.name is not None:
             return self.upload.name.split('/')[-1]
 
+@receiver(models.signals.pre_save, sender=AudioTrack)
+def update_album_size(sender, instance, **kwargs):
+    """
+    Update album size calculation after each time a track is saved or updated.
+    """
+    sum_size = 0
+    new_track_size = instance.upload.size
+    sum_size += new_track_size
+    existing_tracks = instance.album.audiotrack_set.all()
+    for track in existing_tracks:
+        sum_size += track.upload.size
+    instance.album.size = sum_size
+    instance.album.save()
 
 # Handle deletion
 @receiver(models.signals.post_delete, sender=Text)

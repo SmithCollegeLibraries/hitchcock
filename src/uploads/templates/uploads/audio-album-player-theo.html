@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <!-- Chromecast SDK -->
+    <script type="text/javascript" src="//www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+
+    <!-- THEOplayer library and css -->
+    <script type="text/javascript" src="https://cdn.myth.theoplayer.com/fa39a3b7-f930-48aa-8b28-c6e0db8b29e8/THEOplayer.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.myth.theoplayer.com/fa39a3b7-f930-48aa-8b28-c6e0db8b29e8/ui.css" />
+    <style>
+    p.normal {
+        color:#344a5e;
+    }
+    .theo-related-button { cursor: pointer}
+    #hs_cos_wrapper_widget_1501853307605 > div {
+        padding: 0 !important;
+    }
+    h2 {
+        padding-top: 20px;
+    }
+
+    .theoplayer-playlist-holder {
+        background: #1b1b1b;
+        display: inline-block;
+        position: relative;
+        bottom: 0;
+        height: 100%;
+        vertical-align: top;
+    }
+
+    .theoplayer-playlist-menu {
+        box-sizing: border-box;
+        font-family: sans-serif;
+        width: 360px;
+        overflow-y: auto;
+        color: #c0c0c0;
+        display: block;
+        position: relative;
+        background: linear-gradient(to bottom, #000 0, #212121 19%, #212121 100%);
+        box-shadow: 0 1px 1px #1a1a1a inset, 0px 1px 1px #454545;
+        border: 1px solid #1a1a18;
+        scrollbar-base-color: #fff;
+        scrollbar-highlight-color: #fff;
+        scrollbar-arrow-color: #fff;
+        scrollbar-track-color: #161616;
+        scrollbar-shadow-color: #fff;
+    }
+
+    .theoplayer-playlist-holder,
+    .theoplayer-playlist-menu {
+        width: 100%;
+    }
+
+    .theoplayer-playlist-menu::-webkit-scrollbar-thumb:hover {
+        box-shadow: 0em 0em 0.5em #ffffff;
+    }
+
+    .theoplayer-playlist-button-holder .fa-step-forward {
+        float: right;
+    }
+    .theoplayer-playlist-button-holder .fa-step-forward:hover {
+        text-shadow: 0em 0em 1em white;
+    }
+
+    .theoplayer-playlist-button-holder .fa-step-backward {
+        float: left;
+    }
+    .theoplayer-playlist-button-holder .fa-step-backward:hover {
+        text-shadow: 0em 0em 1em white;
+    }
+
+    .theoplayer-playlist-button-holder .fa, .theoplayer-playlist-button-holder .fa {
+    @extend %icon;
+        cursor: pointer;
+        margin: 10px;
+        color: #fff;
+    }
+
+    .theoplayer-playlist-menu ul {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+    }
+
+    .theoplayer-playlist-menu ul li {
+        padding: 5px;
+        border-bottom: 1px solid #000;
+        cursor: pointer;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .theoplayer-playlist-menu ul li.active {
+        background-color: #4f4f4f;
+        color: #FFF;
+    }
+
+    .theoplayer-playlist-menu ul li:hover:not(.active) {
+        background: #353535;
+    }
+
+    .theoplayer-playlist-menu .thumbnail, .theoplayer-playlist-menu .title {
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .theoplayer-playlist-menu .number {
+        padding-right: 10px;
+    }
+
+    .theoplayer-playlist-menu .thumbnail img {
+        width: 64px;
+    }
+
+    .theoplayer-playlist-menu .title {
+        padding-left: 10px;
+    }
+
+    .hs-richtext, li, p {
+        color: white;
+    }
+    </style>
+  </head>
+  <body>
+    <h1>{{title}}</h1>
+    <div class="container playlist">
+    	<div class="video-js vjs-fluid theoplayer theoplayer-skin theo-seekbar-above-controls"><!--42--></div>
+    	<div class="theoplayer-playlist-holder">
+    		<div class="theoplayer-playlist-menu"> </div>
+    		<div class="theoplayer-playlist-button-holder"><span class="fa fa-step-backward" onclick="goPrevious()"> </span> <span class="fa fa-step-forward" onclick="goNext()"> </span></div>
+    	</div>
+    </div>
+    <script>
+    // information on setting up THEOplayer and the player object can be found at https://docs.portal.theoplayer.com/docs/docs/getting-started/web/web
+
+    var element = document.querySelector('.theoplayer');
+    var player = new THEOplayer.Player(element, {  
+    	fluid: true,
+    	libraryLocation: 'https://cdn.myth.theoplayer.com/fa39a3b7-f930-48aa-8b28-c6e0db8b29e8'
+    });
+
+    player.autoplay = true;
+
+    var playlist = [
+      {% for track in wowza_urls_hls %}
+      {
+        source : {
+          sources: {
+            src : '{{track.url}}'
+          }
+        },
+        title: "{{track.title}}",
+      },
+      {% endfor %}
+    ];
+    // create playlist UI
+    var listElement = document.createElement('ul');
+    var li;
+    for (i = 0; i < playlist.length; i++) {
+    	li = createPlaylistElement(i);
+    	listElement.appendChild(li);
+    }
+    var playlistMenu = document.querySelector('.theoplayer-playlist-menu');
+    playlistMenu.innerHTML = "";
+    playlistMenu.appendChild(listElement);
+
+    function createPlaylistElement(trackNumber) {
+    	var track = playlist[trackNumber];
+    	var trackLiElement = document.createElement('li');
+    	var trackNumberElement = document.createElement('span');
+    	trackNumberElement.className = 'number';
+    	trackNumberElement.innerText = trackNumber + 1;
+    	trackLiElement.appendChild(trackNumberElement);
+    	var trackTitleElement = document.createElement('span');
+    	trackTitleElement.className = 'title';
+    	trackTitleElement.innerHTML = track.title;
+    	trackLiElement.appendChild(trackTitleElement);
+    	trackLiElement.onclick = function () {
+    		player.source = track.source;
+    		active = trackNumber;
+    	};
+    	trackLiElement.setAttribute('id', 'theoplayer-playlist-menu-' + trackNumber);
+    	return trackLiElement;
+    }
+
+    // set initial item of the playlist
+    player.source = playlist[0].source;
+
+    var active = 0; // Which track from the playlist is now playing
+    player.addEventListener('ended', onEnded);
+    player.addEventListener('playing',changeActiveTrack);
+
+    // continue with the next item of the playlist when the current video has ended
+    function onEnded () {
+    	goNext();
+    }
+
+    // update selected item in the playlist
+    function changeActiveTrack () {
+    	var activeElement = document.querySelector('.active');
+    	if (activeElement) {
+    		activeElement.classList.remove('active');
+    	}
+    	document.querySelector('#theoplayer-playlist-menu-' + active).className = 'active';
+    }
+
+    // go to the previous item in the playlist
+    function goPrevious () {
+    	if (active > 0) {
+    		active -= 1;
+    		player.source = playlist[active].source;
+    	}
+    }
+
+    // go to the next item in the playlist
+    function goNext () {
+    	if (active + 1 < playlist.length) {
+    		active += 1;
+    		player.source = playlist[active].source;
+    	}
+    }
+
+    // caching logic
+    function configureCachingOfPlaylist() {
+    	var cached = []; // var to store which playlist item has already been cached
+    	player.addEventListener('timeupdate', function() {
+    	   var videoPercentage = Math.round(player.currentTime/player.duration*100);
+    	   // check if cache should happen
+    	   if ((active < (playlist.length - 1)) && !cached[active+1] && videoPercentage >= 75) {
+    			cached[active+1] = true;
+    			var task = THEOplayer.cache.createTask(playlist[active+1].source, {amount: '25%'});
+    			task.start();
+    	   }
+    	});
+    }
+    configureCachingOfPlaylist();
+    </script>
+  </body>
+</html>

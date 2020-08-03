@@ -29,12 +29,12 @@ def play_audio_album(request, pk):
         myurl = settings.WOWZA_ENDPOINT + 'mp3:' + path_from_av + '/playlist.m3u8'
         track_info = {
             "url": myurl,
-            "title": track.upload.name
+            "title": track.title
         }
         wowza_urls_hls.append(track_info)
     wowza_url_hls = wowza_urls_hls[0]
     context = {
-        'wowza_url_hls': wowza_url_hls,
+        'title': obj.title,
         'wowza_urls_hls': wowza_urls_hls,
     }
     return render(request, 'uploads/audio-album-player-theo.html', context)
