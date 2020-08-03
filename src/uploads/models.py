@@ -50,7 +50,7 @@ def text_upload_path(instance, filename):
     # Reimpliment filename sanitization, and collision avoidance
     storage = instance.upload.storage
     valid_filename = storage.get_valid_name(filename)
-    proposed_path = settings.TEXT_SUBDIR_NAME + lookup[instance.type] + valid_filename
+    proposed_path = settings.TEXT_SUBDIR_NAME + lookup[instance.text_type] + valid_filename
     available_filename = storage.get_available_name(proposed_path)
     return available_filename
 
@@ -68,7 +68,7 @@ class Text(Upload):
         ('other', 'Other'),
     ]
 
-    text_type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article')
+    text_type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article', help_text="Text type cannot be changed after upload.")
     def url(self):
         if self.id is not None:
             return settings.TEXTS_ENDPOINT + self.upload.name.replace(settings.TEXT_SUBDIR_NAME, '')
