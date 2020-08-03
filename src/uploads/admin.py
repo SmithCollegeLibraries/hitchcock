@@ -1,6 +1,7 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
-from .models import Upload, Video, Audio, Text
+from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicInline
+from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text
 
 class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
@@ -19,6 +20,24 @@ class AudioAdmin(UploadChildAdmin):
 #    show_in_index = True  # makes child model admin visible in main admin site
     list_display = ('title',)
     readonly_fields = ('size', 'created', 'modified', 'url')
+
+class AudioAlubmInline(StackedPolymorphicInline):
+    model = AudioAlbum
+
+    class AudioTracksInline(StackedPolymorphicInline.Child):
+        model = AudioTrack
+
+    child_inlines = (
+        AudioTracksInline,
+    )
+
+@admin.register(AudioAlbum)
+class AudioAlbumAdmin(PolymorphicInlineSupportMixin, UploadChildAdmin):
+    base_model = AudioAlbum  # Explicitly set here!
+    show_in_index = True  # makes child model admin visible in main admin site
+    list_display = ('title',)
+    readonly_fields = ('size', 'created', 'modified', 'url')
+    inlines = (AudioAlubmInline,)
 
 @admin.register(Text)
 class TextAdmin(UploadChildAdmin):
@@ -42,7 +61,7 @@ class TextAdmin(UploadChildAdmin):
 class UploadParentAdmin(PolymorphicParentModelAdmin):
     """ The parent model admin """
     base_model = Upload  # Optional, explicitly set here.
-    child_models = (Video, Audio, Text)
+    child_models = (Video, Audio, AudioAlbum, Text)
     list_filter = (PolymorphicChildModelFilter,)  # This is optional.
     list_display = ( 'title', 'type', 'identifier', 'created', 'modified', 'size')
     def type(self, obj):

@@ -68,7 +68,7 @@ class Text(Upload):
         ('other', 'Other'),
     ]
 
-    text_type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article', help_text="Text type cannot be changed after upload.")
+    text_type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article', help_text="Text type cannot be changed after saving.")
     def url(self):
         if self.id is not None:
             return settings.TEXTS_ENDPOINT + self.upload.name.replace(settings.TEXT_SUBDIR_NAME, '')
@@ -101,6 +101,21 @@ class Audio(Upload):
             return settings.BASE_URL + "/audio/%s" % self.id
         else:
             return None
+
+class AudioAlbum(Upload):
+    def url(self):
+        if self.id is not None:
+            return settings.BASE_URL + "/audio-album/%s" % self.id
+        else:
+            return None
+
+class AudioTrack(Upload):
+    upload = models.FileField(
+        upload_to=settings.AV_SUBDIR_NAME + 'audio/',
+        max_length=1024,
+        validators=[validate_audio,],
+        help_text="mp3 format only")
+    album = models.ForeignKey(AudioAlbum, on_delete=models.CASCADE)
 
 # Handle deletion
 @receiver(models.signals.post_delete, sender=Text)
