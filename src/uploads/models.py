@@ -128,6 +128,17 @@ def set_album_directory(sender, instance, **kwargs):
         available_filename = storage.get_available_name(proposed_path)
         instance.album_directory = available_filename
 
+@receiver(models.signals.post_delete, sender=AudioAlbum)
+def auto_delete_album_on_delete(sender, instance, **kwargs):
+    """
+    Delete empty album directory on delete of the corresponding object
+    """
+    if instance.album_directory is not None:
+        album_directory = settings.MEDIA_ROOT + '/' + instance.album_directory
+        print("Deleting the dir %s" % album_directory)
+        if os.path.isdir(album_directory):
+            os.rmdir(album_directory)
+
 def audiotrack_upload_path(instance, filename):
     # Get parent album upload directory
     base_path = instance.album.album_directory
