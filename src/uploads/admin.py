@@ -50,12 +50,27 @@ class TextAdmin(UploadChildAdmin):
         else:
             return ['size', 'created', 'modified', 'url', 'text_type']
 
+class MissingFullRecordFilter(admin.SimpleListFilter):
+    title = "empty full record url"
+    parameter_name = 'full_record'
+    def lookups(self, request, model_admin):
+        return (
+            ('Empty', 'Empty'),
+            ('Filled', 'Filled'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'Empty':
+            return Upload.objects.filter(full_record_url__isnull=True)
+        if self.value() == 'Filled':
+            return Upload.objects.filter(full_record_url__isnull=False)
+
 @admin.register(Upload)
 class UploadParentAdmin(PolymorphicParentModelAdmin):
     """ The parent model admin """
     base_model = Upload  # Optional, explicitly set here.
     child_models = (Video, Audio, AudioAlbum, Text)
-    list_filter = (PolymorphicChildModelFilter,)  # This is optional.
+    list_filter = (PolymorphicChildModelFilter, MissingFullRecordFilter)
     list_display = ( 'title', 'type', 'identifier', 'created', 'modified', 'size', 'full_record')
     search_fields = ['title', 'identifier', 'full_record_url']
     def type(self, obj):
