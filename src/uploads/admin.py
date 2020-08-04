@@ -8,7 +8,7 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
     base_model = Upload  # Optional, explicitly set here.
     search_fields = ['title', 'barcode', 'ereserves_record_url']
-    list_display = ( 'title', 'barcode', 'created', 'modified', 'size')
+    list_display = ( 'title', 'barcode', 'created', 'modified', 'size', 'published')
 
 @admin.register(Video)
 class VideoAdmin(UploadChildAdmin):
@@ -36,7 +36,7 @@ class AudioAlbumAdmin(UploadChildAdmin):
 class TextAdmin(UploadChildAdmin):
     base_model = Text  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    list_display = ( 'title', 'text_type', 'barcode', 'created', 'modified', 'size')
+    list_display = ( 'title', 'text_type', 'barcode', 'created', 'modified', 'size', 'published')
     readonly_fields = ('size', 'created', 'modified', 'url', 'text_type')
     def get_readonly_fields(self, request, obj=None):
         """If obj is None that means the object is being created. In this case
@@ -71,7 +71,7 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
     base_model = Upload  # Optional, explicitly set here.
     child_models = (Video, Audio, AudioAlbum, Text)
     list_filter = (PolymorphicChildModelFilter, MissingEReservesRecordFilter)
-    list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size', 'ereserves_record')
+    list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size', 'published', 'ereserves_record')
     search_fields = ['title', 'barcode', 'ereserves_record_url']
     def type(self, obj):
         return obj.polymorphic_ctype
