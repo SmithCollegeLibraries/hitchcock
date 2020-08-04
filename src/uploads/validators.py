@@ -18,3 +18,11 @@ def validate_audio(field):
     valid_extensions = ['.mp3', '.mpeg3']
     if not ext.lower() in valid_extensions:
         raise ValidationError('Unsupported file extension. Must be mp3.')
+
+def validate_barcode(field):
+    try:
+        int(field)
+    except ValueError:
+        raise ValidationError('Must be numbers only.')
+    if len(field) != 8:
+        raise ValidationError('Must be eight characters long.')

@@ -2,7 +2,7 @@ from django.db import models
 from polymorphic.models import PolymorphicModel
 from django.dispatch import receiver
 from django.conf import settings
-from .validators import validate_video, validate_audio, validate_text
+from .validators import validate_video, validate_audio, validate_text, validate_barcode
 from django.core.files.storage import DefaultStorage
 from django.db.models.query_utils import DeferredAttribute
 import uuid
@@ -18,7 +18,7 @@ class Upload(PolymorphicModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=1024)
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
-    barcode = models.CharField(max_length=512, blank=True, null=True)
+    barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode,])
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
