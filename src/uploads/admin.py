@@ -7,8 +7,8 @@ from django.utils.safestring import mark_safe
 class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
     base_model = Upload  # Optional, explicitly set here.
-    search_fields = ['title', 'identifier', 'full_record_url']
-    list_display = ( 'title', 'identifier', 'created', 'modified', 'size')
+    search_fields = ['title', 'barcode', 'ereserves_record_url']
+    list_display = ( 'title', 'barcode', 'created', 'modified', 'size')
 
 @admin.register(Video)
 class VideoAdmin(UploadChildAdmin):
@@ -36,7 +36,7 @@ class AudioAlbumAdmin(UploadChildAdmin):
 class TextAdmin(UploadChildAdmin):
     base_model = Text  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    list_display = ( 'title', 'text_type', 'identifier', 'created', 'modified', 'size')
+    list_display = ( 'title', 'text_type', 'barcode', 'created', 'modified', 'size')
     readonly_fields = ('size', 'created', 'modified', 'url', 'text_type')
     def get_readonly_fields(self, request, obj=None):
         """If obj is None that means the object is being created. In this case
@@ -50,9 +50,9 @@ class TextAdmin(UploadChildAdmin):
         else:
             return ['size', 'created', 'modified', 'url', 'text_type']
 
-class MissingFullRecordFilter(admin.SimpleListFilter):
-    title = "empty full record url"
-    parameter_name = 'full_record'
+class MissingEReservesRecordFilter(admin.SimpleListFilter):
+    title = "empty e-reserves url"
+    parameter_name = 'E-Reserves Record'
     def lookups(self, request, model_admin):
         return (
             ('Empty', 'Empty'),
@@ -61,22 +61,22 @@ class MissingFullRecordFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == 'Empty':
-            return Upload.objects.filter(full_record_url__isnull=True)
+            return Upload.objects.filter(ereserves_record_url__isnull=True)
         if self.value() == 'Filled':
-            return Upload.objects.filter(full_record_url__isnull=False)
+            return Upload.objects.filter(ereserves_record_url__isnull=False)
 
 @admin.register(Upload)
 class UploadParentAdmin(PolymorphicParentModelAdmin):
     """ The parent model admin """
     base_model = Upload  # Optional, explicitly set here.
     child_models = (Video, Audio, AudioAlbum, Text)
-    list_filter = (PolymorphicChildModelFilter, MissingFullRecordFilter)
-    list_display = ( 'title', 'type', 'identifier', 'created', 'modified', 'size', 'full_record')
-    search_fields = ['title', 'identifier', 'full_record_url']
+    list_filter = (PolymorphicChildModelFilter, MissingEReservesRecordFilter)
+    list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size', 'ereserves_record')
+    search_fields = ['title', 'barcode', 'ereserves_record_url']
     def type(self, obj):
         return obj.polymorphic_ctype
 
-    def full_record(self, obj):
+    def ereserves_record(self, obj):
         if obj is not None:
-            if obj.full_record_url is not None:
-                return mark_safe("<a href='%s'>full record</a>" % obj.full_record_url)
+            if obj.ereserves_record_url is not None:
+                return mark_safe("<a href='%s'>record</a>" % obj.ereserves_record_url)
