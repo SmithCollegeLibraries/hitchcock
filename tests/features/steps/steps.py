@@ -23,6 +23,7 @@ def setp_imp(context, object_type):
     test_files = {
         'video': 'ed.mp4',
         'audio': 'band_1_clean.mp3',
+        'text': 'Lipsitz_Possessive_selections.pdf',
     }
     driver = context.behave_driver
     # Go to add upload page
@@ -56,7 +57,6 @@ def step_imp(context, object_type):
     url = url_element.text
     context.view_urls[object_type] = url # Save this for later for other tests
     driver.get(url)
-    # import sys, pdb; pdb.Pdb(stdout=sys.__stdout__).set_trace()
 
 @then("a working AV player should load")
 def step_imp(context):
@@ -67,7 +67,6 @@ def step_imp(context):
     except:
         assert False, "video player couldn't be found/started"
     time.sleep(5)
-    # pdb.Pdb(stdout=sys.__stdout__).set_trace()
     try:
         video_player = driver.get_element('.vjs-playing')
         video_player.click() # Start the video
@@ -104,3 +103,10 @@ def step_imp(context, object_type):
     published_checkbox.submit()
     assert "was changed successfully" in driver.page_source, \
     "Post edit page doesn't say it 'was changed successfully'"
+
+@then("a working PDF viewer should load")
+def step_imp(context):
+    driver = context.behave_driver
+    embed = driver.get_element('embed')
+    assert 'application/pdf' == embed.get_attribute('type')
+    # pdb.Pdb(stdout=sys.__stdout__).set_trace()

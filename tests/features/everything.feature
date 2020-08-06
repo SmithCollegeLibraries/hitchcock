@@ -14,7 +14,6 @@ Feature: Everything
       When I go to the video
       Then a working AV player should load
 
-  @wip
   Scenario: Audio ingest, playing, access, publishing
     Given I am logged in as a staff user
       When I ingest a audio object
@@ -28,3 +27,10 @@ Feature: Everything
     Given I am a non-staff user
       When I go to the audio
       Then a working AV player should load
+
+  @wip
+  Scenario: Text ingest, playing, access, publishing
+    Given I am logged in as a staff user
+      When I ingest a text object
+      And I go to the current text object URL
+      Then a working PDF viewer should load
