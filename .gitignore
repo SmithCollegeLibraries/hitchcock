@@ -151,3 +151,4 @@ db.sqlite3*
 htpass
 /hitchcock/hitchcock/settings.py
 settings.py
+.DS_Store

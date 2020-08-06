@@ -28,9 +28,23 @@ Feature: Everything
       When I go to the audio
       Then a working AV player should load
 
-  @wip
-  Scenario: Text ingest, playing, access, publishing
+  Scenario: Text ingest, playing
     Given I am logged in as a staff user
       When I ingest a text object
       And I go to the current text object URL
       Then a working PDF viewer should load
+
+  @wip
+  Scenario: Audio album ingest, playing, access, publishing
+    Given I am logged in as a staff user
+      When I ingest a "audio album" object
+      And I go to the current "audio album" object URL
+      Then a working AV player should load
+    Given I am a non-staff user
+      When I go to the "audio album"
+      Then I am forbidden
+    Given I am logged in as a staff user
+      When I set the "audio album" as published
+    Given I am a non-staff user
+      When I go to the "audio album"
+      Then a working AV player should load

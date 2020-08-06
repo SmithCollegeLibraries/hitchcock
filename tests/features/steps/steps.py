@@ -3,6 +3,11 @@ import time
 import os
 import sys, pdb
 
+def get_includes_text(driver, tag, text):
+    element = driver.find_element_by_xpath(\
+    "//%s[contains(text(),'%s')]" % (tag, text))
+    return element
+
 @given('I am logged in as a staff user')
 def step_imp(context):
     driver = context.behave_driver
@@ -18,12 +23,19 @@ def step_imp(context):
     elif "Site administration" in driver.title:
         return # All set!
 
-@when("I ingest a {object_type} object")
+@when('I ingest a "{object_type}" object')
 def setp_imp(context, object_type):
     test_files = {
         'video': 'ed.mp4',
         'audio': 'band_1_clean.mp3',
         'text': 'Lipsitz_Possessive_selections.pdf',
+        'audio album': [
+            {'file': 'Band_1_Clean.mp3', 'title': '"Half-hitch" performed by W. E. Pierce of North Shrewsbury and Northam, VT'},
+            {'file': 'Band_2_Clean.mp3', 'title': '"Lord Bateman (frag)" performed by W. E. Pierce of North Shrewsbury and Northam, VT'},
+            {'file': 'Band_3_Clean.mp3', 'title': '"Sailor boy" performed by W. E. Pierce of North Shrewsbury and Northam, VT'},
+            {'file': 'Band_4_Clean.mp3', 'title': '"Fair Charlotte" performed by W. E. Pierce of North Shrewsbury and Northam, VT'},
+            {'file': 'Band_5_Clean.mp3', 'title': '"Butcher boy" performed by Mrs. Elwin Burditt of Springfield, VT'},
+        ]
     }
     driver = context.behave_driver
     # Go to add upload page
@@ -39,10 +51,27 @@ def setp_imp(context, object_type):
     "Add %s page title is wrong" % object_type
     title_input = driver.find_element_by_name('title')
     title_input.send_keys('Test %s upload %s' % (object_type, unique_string))
-    upload_button = driver.find_element_by_name('upload')
-    
-    filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]
-    upload_button.send_keys(filename)
+    # pdb.Pdb(stdout=sys.__stdout__).set_trace()
+    if object_type == 'audio album':
+        track_num = 0
+        for track in test_files['audio album']:
+            add_track_button = get_includes_text(driver, 'a', \
+            'Add another Audio track')
+            add_track_button.click()
+            choose_file_button = driver.find_element_by_name( \
+            'audiotrack_set-%i-upload' % track_num)
+            filename = test_files['audio album'][track_num]['file']
+            filename = os.getcwd() + '/sample_upload_files/album/' + filename
+            choose_file_button.send_keys(filename)
+            title = test_files['audio album'][track_num]['title']
+            title_input = driver.find_element_by_name( \
+            'audiotrack_set-%i-title' % track_num)
+            title_input.send_keys(title)
+            track_num += 1
+    else:
+        upload_button = driver.find_element_by_name('upload')
+        filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]
+        upload_button.send_keys(filename)
     submit_button = driver.find_element_by_xpath(
         "//input[@value='Save and continue editing']")
     submit_button.click()
@@ -50,7 +79,7 @@ def setp_imp(context, object_type):
     "Post ingest page doesn't say it 'was added successfully'"
     context.edit_urls[object_type] = driver.current_url
 
-@when("I go to the current {object_type} object URL")
+@when('I go to the current "{object_type}" object URL')
 def step_imp(context, object_type):
     driver = context.behave_driver
     url_element = driver.get_element('div.field-url div.readonly')
@@ -84,7 +113,7 @@ def step_imp(context):
         logout_link = driver.find_element_by_xpath("//a[contains(text(),'Log out')]")
         logout_link.click()
 
-@when("I go to the {object_type}")
+@when('I go to the "{object_type}"')
 def step_imp(context, object_type):
     driver = context.behave_driver
     driver.get(context.view_urls[object_type])
@@ -94,7 +123,7 @@ def step_imp(context):
     driver = context.behave_driver
     assert "403 Forbidden" in driver.page_source
 
-@when("I set the {object_type} as published")
+@when('I set the "{object_type}" as published')
 def step_imp(context, object_type):
     driver = context.behave_driver
     driver.get(context.edit_urls[object_type])
@@ -109,4 +138,4 @@ def step_imp(context):
     driver = context.behave_driver
     embed = driver.get_element('embed')
     assert 'application/pdf' == embed.get_attribute('type')
-    # pdb.Pdb(stdout=sys.__stdout__).set_trace()
+    
