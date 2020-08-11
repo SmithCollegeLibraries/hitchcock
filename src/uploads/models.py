@@ -5,6 +5,8 @@ from django.conf import settings
 from .validators import validate_video, validate_audio, validate_text, validate_barcode
 from django.core.files.storage import DefaultStorage
 from django.db.models.query_utils import DeferredAttribute
+from adminsortable.fields import SortableForeignKey
+from adminsortable.models import SortableMixin
 import uuid
 import os
 
@@ -154,7 +156,10 @@ def audiotrack_upload_path(instance, filename):
     available_filename = storage.get_available_name(proposed_path)
     return available_filename
 
-class AudioTrack(models.Model):
+class AudioTrack(SortableMixin):
+    class Meta:
+        ordering = ['track_order']
+
     upload = models.FileField(
         upload_to=audiotrack_upload_path,
         max_length=1024,
@@ -163,7 +168,8 @@ class AudioTrack(models.Model):
     title = models.CharField(max_length=512)
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
-    album = models.ForeignKey(AudioAlbum, on_delete=models.CASCADE)
+    album = SortableForeignKey(AudioAlbum, on_delete=models.CASCADE)
+    track_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
 
     def __str__(self):
         if self.upload.name is not None:

@@ -1,14 +1,16 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicInline
-from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text
+from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline
 from django.utils.safestring import mark_safe
+from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text
 
 class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
     base_model = Upload  # Optional, explicitly set here.
     search_fields = ['title', 'barcode', 'ereserves_record_url']
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size', 'published')
+    ordering = ('-modified',)
 
 @admin.register(Video)
 class VideoAdmin(UploadChildAdmin):
@@ -22,11 +24,12 @@ class AudioAdmin(UploadChildAdmin):
 #    show_in_index = True  # makes child model admin visible in main admin site
     readonly_fields = ('size', 'created', 'modified', 'url')
 
-class AudioAlubmInline(admin.TabularInline):
+class AudioAlubmInline(SortableTabularInline):
     model = AudioTrack
+    extra = 1
 
 @admin.register(AudioAlbum)
-class AudioAlbumAdmin(UploadChildAdmin):
+class AudioAlbumAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = AudioAlbum  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
     readonly_fields = ('size', 'created', 'modified', 'url', 'album_directory')
@@ -73,6 +76,7 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
     list_filter = (PolymorphicChildModelFilter, MissingEReservesRecordFilter)
     list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size', 'published', 'ereserves_record')
     search_fields = ['title', 'barcode', 'ereserves_record_url']
+    ordering = ('-modified',)
     def type(self, obj):
         return obj.polymorphic_ctype
 
