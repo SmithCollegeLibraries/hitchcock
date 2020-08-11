@@ -17,3 +17,11 @@ pip install -r requirements.text
 # https://chromedriver.chromium.org/downloads
 behave
 ```
+
+To specify a target environment use the -D flag to set the 'env' variable
+
+``` bash
+behave -D env=libsandbox
+```
+
+By default, 'local' is selected automatically.

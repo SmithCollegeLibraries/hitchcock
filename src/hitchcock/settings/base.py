@@ -13,24 +13,18 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(os.path.join(__file__, os.pardir))))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'a@hl$g%4rql0evai1zcnm_ct*o%j#s-f0%_f7fb4f7qj^sygnb'
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ['libsandbox.smith.edu',]
-BASE_URL = "http://libsandbox.smith.edu/hitchcock"
+DEBUG = False
 
 # Application definition
 
 INSTALLED_APPS = [
+    'polymorphic',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,13 +42,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.RemoteUserMiddleware',
-]
-
-AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.RemoteUserBackend',
-    'django.contrib.auth.backends.ModelBackend', # fallback when Shib doesn't work
 ]
 
 ROOT_URLCONF = 'hitchcock.urls'
@@ -80,13 +67,6 @@ WSGI_APPLICATION = 'hitchcock.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
 
 
 # Password validation
@@ -124,34 +104,3 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
-
-STATIC_URL = '/hitchcock/static/'
-STATIC_ROOT = '/var/www/html/hitchcock/static/'
-
-MEDIA_ROOT = '/tmp/hitchcock/'
-
-AV_SUBDIR_NAME = 'av/'
-TEXT_SUBDIR_NAME = 'text/'
-# _definst_/ required for streams in subdirectories
-WOWZA_ENDPOINT = 'http://localhost:1935/hitchcock/_definst_/'
-TEXTS_ENDPOINT = 'http://localhost:9999/'
-
-# logging
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': '/tmp/hitchcock-debug.log',
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
