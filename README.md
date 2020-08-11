@@ -9,6 +9,7 @@ For a local development environment:
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+patches/apply_patches.sh
 
 # You must specify the settings file before running Django e.g.
 export DJANGO_SETTINGS_MODULE=hitchcock.settings.local_tristan
