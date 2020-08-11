@@ -9,6 +9,7 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     base_model = Upload  # Optional, explicitly set here.
     search_fields = ['title', 'barcode', 'ereserves_record_url']
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size', 'published')
+    ordering = ('-modified',)
 
 @admin.register(Video)
 class VideoAdmin(UploadChildAdmin):
@@ -73,6 +74,7 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
     list_filter = (PolymorphicChildModelFilter, MissingEReservesRecordFilter)
     list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size', 'published', 'ereserves_record')
     search_fields = ['title', 'barcode', 'ereserves_record_url']
+    ordering = ('-modified',)
     def type(self, obj):
         return obj.polymorphic_ctype
 
