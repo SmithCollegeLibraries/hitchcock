@@ -1,0 +1,5 @@
+diff admin/childadmin.py
+74c74
+<         match = resolve(request.path)
+---
+>         match = resolve(request.path_info)
