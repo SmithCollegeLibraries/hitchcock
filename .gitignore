@@ -152,3 +152,5 @@ htpass
 /hitchcock/hitchcock/settings.py
 settings.py
 .DS_Store
+libsandbox.sqlite3
+static
