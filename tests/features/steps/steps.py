@@ -11,7 +11,9 @@ def get_includes_text(driver, tag, text):
 @given('I am logged in as a staff user')
 def step_imp(context):
     driver = context.behave_driver
-    driver.get('http://localhost:8000/admin/')
+    base_url = context.target['base_url']
+
+    driver.get(base_url + '/admin/')
     if "Log in" in driver.title:
         username_input = driver.find_element_by_name('username')
         username_input.send_keys('test_staff_user')
@@ -38,8 +40,10 @@ def setp_imp(context, object_type):
         ]
     }
     driver = context.behave_driver
+    base_url = context.target['base_url']
+
     # Go to add upload page
-    driver.get('http://localhost:8000/admin/uploads/upload/add/')
+    driver.get(base_url + '/admin/uploads/upload/add/')
     assert "Add upload" in driver.title, "Upload add page title is wrong"
     radio_item = driver.find_element_by_xpath(\
     "//*[contains(text(),'%s')]" % object_type)
@@ -106,7 +110,9 @@ def step_imp(context):
 @given("I am a non-staff user")
 def step_imp(context):
     driver = context.behave_driver
-    driver.get('http://localhost:8000/admin/')
+    base_url = context.target['base_url']
+
+    driver.get(base_url + '/admin/')
     if "Log in" in driver.title:
         return # All set!
     elif "Site administration" in driver.title:
