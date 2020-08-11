@@ -13,10 +13,14 @@ patches/apply_patches.sh
 
 # You must specify the settings file before running Django e.g.
 export DJANGO_SETTINGS_MODULE=hitchcock.settings.local_tristan
-# To make a new settings file:
+
+python manage.py runserver
+```
+
+To make a new settings file:
+
+``` bash
 cp src/hitchcock/settings/local_tristan.py src/hitchcock/settings/local_me.py
 # ... edit src/hitchcock/settings/local_me.py ...
 export DJANGO_SETTINGS_MODULE=hitchcock.settings.local_me
-
-python manage.py runserver
 ```
