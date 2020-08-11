@@ -1,8 +1,9 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicInline
-from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text
+from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline
 from django.utils.safestring import mark_safe
+from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text
 
 class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
@@ -23,11 +24,12 @@ class AudioAdmin(UploadChildAdmin):
 #    show_in_index = True  # makes child model admin visible in main admin site
     readonly_fields = ('size', 'created', 'modified', 'url')
 
-class AudioAlubmInline(admin.TabularInline):
+class AudioAlubmInline(SortableTabularInline):
     model = AudioTrack
+    extra = 1
 
 @admin.register(AudioAlbum)
-class AudioAlbumAdmin(UploadChildAdmin):
+class AudioAlbumAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = AudioAlbum  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
     readonly_fields = ('size', 'created', 'modified', 'url', 'album_directory')

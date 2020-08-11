@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'adminsortable',
     'uploads',
 ]
 
@@ -57,6 +58,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.static',
             ],
         },
     },
@@ -64,6 +66,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'hitchcock.wsgi.application'
 
+# For adminsortable https://github.com/alsoicode/django-admin-sortable#configuration
+CSRF_COOKIE_HTTPONLY = True
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
