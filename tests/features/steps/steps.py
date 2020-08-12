@@ -91,21 +91,26 @@ def step_imp(context, object_type):
     context.view_urls[object_type] = url # Save this for later for other tests
     driver.get(url)
 
-@then("a working AV player should load")
-def step_imp(context):
+@then('a working "{asset_viewer}" should load')
+def step_imp(context, asset_viewer):
     driver = context.behave_driver
-    try:
-        video_player = driver.get_element('.vjs-paused')
-        video_player.click() # Start the video
-    except:
-        assert False, "video player couldn't be found/started"
-    time.sleep(5)
-    try:
-        video_player = driver.get_element('.vjs-playing')
-        video_player.click() # Start the video
-    except:
-        assert False, "video player didn't start or couldn't be paused"
-    time.sleep(1)
+
+    if asset_viewer == 'av player':
+        try:
+            video_player = driver.get_element('.vjs-paused')
+            video_player.click() # Start the video
+        except:
+            assert False, "video player couldn't be found/started"
+        time.sleep(5)
+        try:
+            video_player = driver.get_element('.vjs-playing')
+            video_player.click() # Start the video
+        except:
+            assert False, "video player didn't start or couldn't be paused"
+
+    elif asset_viewer == 'pdf viewer':
+        embed = driver.get_element('embed')
+        assert 'application/pdf' == embed.get_attribute('type')
 
 @given("I am a non-staff user")
 def step_imp(context):
@@ -138,10 +143,3 @@ def step_imp(context, object_type):
     published_checkbox.submit()
     assert "was changed successfully" in driver.page_source, \
     "Post edit page doesn't say it 'was changed successfully'"
-
-@then("a working PDF viewer should load")
-def step_imp(context):
-    driver = context.behave_driver
-    embed = driver.get_element('embed')
-    assert 'application/pdf' == embed.get_attribute('type')
-    
