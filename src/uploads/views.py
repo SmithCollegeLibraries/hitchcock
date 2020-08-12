@@ -1,8 +1,7 @@
-from django.shortcuts import render
-from django.shortcuts import get_object_or_404
+from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
-from .models import Video, Audio, AudioAlbum
+from .models import Video, Audio, AudioAlbum, Text
 
 def staff_view_unpublished(render_func):
     """ Decorator for checking whether an item is unpublished.
@@ -17,6 +16,14 @@ def staff_view_unpublished(render_func):
             else:
                 raise PermissionDenied
     return wrapper
+
+def show_text(request, pk):
+    obj = get_object_or_404(Text, pk=pk)
+    @staff_view_unpublished
+    def render_text(request, obj):
+        pdf_url = obj.stream_url
+        return redirect(pdf_url)
+    return render_text(request, obj)
 
 def play_video(request, pk):
     obj = get_object_or_404(Video, pk=pk)

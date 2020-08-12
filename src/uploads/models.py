@@ -76,7 +76,15 @@ class Text(Upload):
     ]
 
     text_type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article', help_text="Text type cannot be changed after saving.")
+
+    @property
     def url(self):
+        if self.created is not None:
+            return settings.BASE_URL + "/texts/%s" % self.id
+        else:
+            return None
+    @property
+    def stream_url(self):
         if self.created is not None:
             return settings.TEXTS_ENDPOINT + self.upload.name.replace(settings.TEXT_SUBDIR_NAME, '')
         else:
