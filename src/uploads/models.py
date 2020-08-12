@@ -5,6 +5,8 @@ from django.conf import settings
 from .validators import validate_video, validate_audio, validate_text, validate_barcode
 from django.core.files.storage import DefaultStorage
 from django.db.models.query_utils import DeferredAttribute
+from adminsortable.fields import SortableForeignKey
+from adminsortable.models import SortableMixin
 import uuid
 import os
 
@@ -16,6 +18,7 @@ class Upload(PolymorphicModel):
         ('born_digital', 'Born Digital'),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    identifier = models.CharField(max_length=1024, blank=True, null=True)
     title = models.CharField(max_length=1024)
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
     barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode,])
@@ -38,7 +41,6 @@ class Upload(PolymorphicModel):
 
     def __str__(self):
         return self.title
-
 
 ### Text i.e. pdf ###
 def text_upload_path(instance, filename):
@@ -74,7 +76,15 @@ class Text(Upload):
     ]
 
     text_type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article', help_text="Text type cannot be changed after saving.")
+
+    @property
     def url(self):
+        if self.created is not None:
+            return settings.BASE_URL + "/texts/%s" % self.id
+        else:
+            return None
+    @property
+    def stream_url(self):
         if self.created is not None:
             return settings.TEXTS_ENDPOINT + self.upload.name.replace(settings.TEXT_SUBDIR_NAME, '')
         else:
@@ -154,7 +164,10 @@ def audiotrack_upload_path(instance, filename):
     available_filename = storage.get_available_name(proposed_path)
     return available_filename
 
-class AudioTrack(models.Model):
+class AudioTrack(SortableMixin):
+    class Meta:
+        ordering = ['track_order']
+
     upload = models.FileField(
         upload_to=audiotrack_upload_path,
         max_length=1024,
@@ -163,7 +176,8 @@ class AudioTrack(models.Model):
     title = models.CharField(max_length=512)
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
-    album = models.ForeignKey(AudioAlbum, on_delete=models.CASCADE)
+    album = SortableForeignKey(AudioAlbum, on_delete=models.CASCADE)
+    track_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
 
     def __str__(self):
         if self.upload.name is not None:
@@ -225,3 +239,12 @@ def update_upload_size(sender, instance, **kwargs):
     """Saves the file size to the Upload model
     """
     instance.size = instance.upload.size
+
+@receiver(models.signals.pre_save, sender=Text)
+@receiver(models.signals.pre_save, sender=Video)
+@receiver(models.signals.pre_save, sender=Audio)
+@receiver(models.signals.pre_save, sender=AudioAlbum)
+def update_upload_identifier(sender, instance, **kwargs):
+    """Saves a text copy of the ID to a field for searching on
+    """
+    instance.identifier = str(instance.id)

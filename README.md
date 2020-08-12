@@ -1,4 +1,4 @@
-Hitchcock is a web application for managing and providing access to electronic reserves materials.
+Hitchcock is a web application for managing and providing access to locally hosted electronic reserves materials.
 
 # Setup
 Requires Python 3.5 or later. 
@@ -23,4 +23,12 @@ To make a new settings file:
 cp src/hitchcock/settings/local_tristan.py src/hitchcock/settings/local_me.py
 # ... edit src/hitchcock/settings/local_me.py ...
 export DJANGO_SETTINGS_MODULE=hitchcock.settings.local_me
+```
+
+In a production setting you will probably want to set the configuration in the
+wsgi.py file, instead of via the environment variable. Like this:
+
+``` python
+#os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hitchcock.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hitchcock.settings.ereserves')
 ```

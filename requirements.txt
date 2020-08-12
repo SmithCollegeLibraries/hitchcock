@@ -3,6 +3,7 @@ chardet==3.0.4
 defusedxml==0.6.0
 diff-match-patch==20200713
 Django==2.2.14
+django-admin-sortable==2.2.3
 django-import-export==2.3.0
 django-polymorphic==2.1.2
 et-xmlfile==1.0.1
