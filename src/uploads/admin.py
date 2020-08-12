@@ -17,13 +17,13 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
 class VideoAdmin(UploadChildAdmin):
     base_model = Video  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'url')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'identifier')
 
 @admin.register(Audio)
 class AudioAdmin(UploadChildAdmin):
     base_model = Audio  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'url')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'identifier')
 
 class AudioAlubmInline(SortableTabularInline):
     model = AudioTrack
@@ -33,7 +33,7 @@ class AudioAlubmInline(SortableTabularInline):
 class AudioAlbumAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = AudioAlbum  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'url', 'album_directory')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'album_directory', 'identifier')
     inlines = [AudioAlubmInline,]
 
 @admin.register(Text)
@@ -41,7 +41,7 @@ class TextAdmin(UploadChildAdmin):
     base_model = Text  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
     list_display = ( 'title', 'text_type', 'barcode', 'created', 'modified', 'size', 'published')
-    readonly_fields = ('size', 'created', 'modified', 'url', 'text_type')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'text_type', 'identifier')
     list_filter = ('published', 'text_type')
     def get_readonly_fields(self, request, obj=None):
         """If obj is None that means the object is being created. In this case
@@ -51,9 +51,9 @@ class TextAdmin(UploadChildAdmin):
         after creation.
         """
         if obj is None:
-            return ['size', 'created', 'modified', 'url']
+            return ['size', 'created', 'modified', 'url', 'identifier']
         else:
-            return ['size', 'created', 'modified', 'url', 'text_type']
+            return ['size', 'created', 'modified', 'url', 'text_type', 'identifier']
 
 class MissingEReservesRecordFilter(admin.SimpleListFilter):
     title = "empty e-reserves url"
@@ -81,7 +81,7 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
         'published',
     )
     list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size', 'published', 'ereserves_record')
-    search_fields = ['title', 'barcode', 'ereserves_record_url']
+    search_fields = ['title', 'barcode', 'ereserves_record_url', 'identifier']
     ordering = ('-modified',)
     def type(self, obj):
         return obj.polymorphic_ctype

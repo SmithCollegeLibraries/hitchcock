@@ -18,6 +18,7 @@ class Upload(PolymorphicModel):
         ('born_digital', 'Born Digital'),
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    identifier = models.CharField(max_length=1024, blank=True, null=True)
     title = models.CharField(max_length=1024)
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
     barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode,])
@@ -40,7 +41,6 @@ class Upload(PolymorphicModel):
 
     def __str__(self):
         return self.title
-
 
 ### Text i.e. pdf ###
 def text_upload_path(instance, filename):
@@ -231,3 +231,12 @@ def update_upload_size(sender, instance, **kwargs):
     """Saves the file size to the Upload model
     """
     instance.size = instance.upload.size
+
+@receiver(models.signals.pre_save, sender=Text)
+@receiver(models.signals.pre_save, sender=Video)
+@receiver(models.signals.pre_save, sender=Audio)
+@receiver(models.signals.pre_save, sender=AudioAlbum)
+def update_upload_identifier(sender, instance, **kwargs):
+    """Saves a text copy of the ID to a field for searching on
+    """
+    instance.identifier = str(instance.id)
