@@ -23,6 +23,7 @@ class Upload(PolymorphicModel):
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
     barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode,])
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
+    notes = models.TextField()
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
     size = models.IntegerField(blank=True, null=True)
