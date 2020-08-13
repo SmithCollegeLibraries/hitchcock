@@ -29,7 +29,7 @@ AV_SUBDIR_NAME = 'av/'
 AUDIO_ALBUMS_SUBDIR_NAME = 'av/audio-albums/'
 TEXT_SUBDIR_NAME = 'text/'
 # NOTE: _definst_/ required subdirectories to work in Wowza
-WOWZA_ENDPOINT = 'http://localhost:1935/hitchcock/_definst_/'
+WOWZA_ENDPOINT = 'http://ereserves.smith.edu:1935/reserves/_definst_/'
 TEXTS_ENDPOINT = 'http://localhost:9999/'
 
 # logging
