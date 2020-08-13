@@ -31,8 +31,16 @@ def play_video(request, pk):
     def render_video(request, obj):
         path_from_av = obj.upload.name.replace(settings.AV_SUBDIR_NAME, '')
         wowza_url_hls = settings.WOWZA_ENDPOINT + 'mp4:' + path_from_av + '/playlist.m3u8'
+
+        _vtt_tracks = obj.videovtttrack_set.all()
+        if len(_vtt_tracks) > 0:
+            vtt_tracks = _vtt_tracks
+        else:
+            vtt_tracks = None
+
         context = {
             'wowza_url_hls': wowza_url_hls,
+            'vtt_tracks': vtt_tracks,
         }
         return render(request, 'uploads/video-player-theo.html', context)
     return render_video(request, obj)

@@ -18,7 +18,7 @@ def step_imp(context):
         username_input = driver.find_element_by_name('username')
         username_input.send_keys('test_staff_user')
         password_input = driver.find_element_by_name('password')
-        password_input.send_keys('opensesame')
+        password_input.send_keys(context.password)
         password_input.submit()
         # Check that I'm now on the site administration page
         assert "Site administration" in driver.title, "Log in problem"

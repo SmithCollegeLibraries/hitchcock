@@ -1,5 +1,6 @@
 # features/environment.py
 import behave_webdriver
+import logging
 
 ENVIRONMENT_SETTINGS = {
     'local': {
@@ -7,7 +8,10 @@ ENVIRONMENT_SETTINGS = {
     },
     'libsandbox': {
         'base_url': 'https://libsandbox.smith.edu/hitchcock',
-    }
+    },
+    'ereserves': {
+        'base_url': 'https://ereserves.smith.edu/hitchcock',
+    },
 }
 
 def before_all(context):
@@ -19,6 +23,11 @@ def before_all(context):
     except KeyError:
         target = 'local'
     context.target = ENVIRONMENT_SETTINGS[target]
+    try:
+        context.password = context.config.userdata['password']
+    except KeyError:
+        print("You must set a password for the test_staff_user account with the -D option (e.g. `-D password=opensesame`)")
+        exit(1)
 
 def after_all(context):
     # cleanup after tests run

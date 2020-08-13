@@ -7,6 +7,7 @@ from django.core.files.storage import DefaultStorage
 from django.db.models.query_utils import DeferredAttribute
 from adminsortable.fields import SortableForeignKey
 from adminsortable.models import SortableMixin
+from .codes import ISO_LANGUAGE_CODES
 import uuid
 import os
 
@@ -23,6 +24,7 @@ class Upload(PolymorphicModel):
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
     barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode,])
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
+    notes = models.TextField(blank=True, null=True)
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
     size = models.IntegerField(blank=True, null=True)
@@ -101,6 +103,50 @@ class Video(Upload):
     def url(self):
         if self.created is not None:
             return settings.BASE_URL + "/videos/%s" % self.id
+        else:
+            return None
+
+class VideoVttTrack(SortableMixin):
+    class Meta:
+        ordering = ['vtt_order']
+
+    TEXT_TRACK_TYPES = [
+        ('captions', 'Captions (for hearing impairment)'),
+        ('subtitles', 'Subtitles (for language translations)'),
+        ('descriptions', 'Descriptions (for vision impairment)'),
+        # ('chapters', 'Chapters'),
+        # ('metadata', 'Metadata (for machines, not humans)'),
+    ]
+    upload = models.FileField(
+        upload_to=settings.TEXT_SUBDIR_NAME + settings.VTT_SUBDIR_NAME,
+        max_length=1024,
+#        validators=[validate_audio,],
+        help_text="vtt format only")
+    type = models.CharField(max_length=16, choices=TEXT_TRACK_TYPES)
+    language = models.CharField(
+        max_length=2,
+        choices=ISO_LANGUAGE_CODES,
+        default='en'
+    )
+    label = models.CharField(
+        max_length=16,
+        blank=True,
+        null=True,
+        help_text="Optional - Users see this. Overrides the name in the user interface generated from the Type and Language fields. Don't use this unless you know what you are doing."
+    )
+    modified = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
+    video = SortableForeignKey(Video, on_delete=models.CASCADE)
+    vtt_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
+
+    def __str__(self):
+        if self.upload.name is not None:
+            return self.upload.name.split('/')[-1]
+
+    @property
+    def stream_url(self):
+        if self.created is not None:
+            return settings.TEXTS_ENDPOINT + self.upload.name.replace(settings.TEXT_SUBDIR_NAME, '')
         else:
             return None
 
