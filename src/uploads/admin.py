@@ -1,9 +1,9 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicInline
-from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline
+from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline, SortableStackedInline
 from django.utils.safestring import mark_safe
-from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text
+from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text, VideoVttTrack
 
 class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
@@ -13,11 +13,16 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     ordering = ('-modified',)
     list_filter = ('published',)
 
+class VideoVttTrackInline(SortableTabularInline):
+    model = VideoVttTrack
+    extra = 1
+
 @admin.register(Video)
-class VideoAdmin(UploadChildAdmin):
+class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = Video  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
     readonly_fields = ('size', 'created', 'modified', 'url', 'identifier')
+    inlines = [VideoVttTrackInline,]
 
 @admin.register(Audio)
 class AudioAdmin(UploadChildAdmin):

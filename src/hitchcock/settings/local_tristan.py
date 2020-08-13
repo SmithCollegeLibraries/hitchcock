@@ -26,6 +26,8 @@ MEDIA_ROOT = '/Users/tchambers/code/hitchcock/test-media-dir'
 AV_SUBDIR_NAME = 'av/'
 AUDIO_ALBUMS_SUBDIR_NAME = 'av/audio-albums/'
 TEXT_SUBDIR_NAME = 'text/'
+# VTT files are saved in a subdir under TEXT_SUBDIR_NAME
+VTT_SUBDIR_NAME = 'vtt/'
 # _definst_/ required for streams in subdirectories
 WOWZA_ENDPOINT = 'http://localhost:1935/hitchcock/_definst_/'
 TEXTS_ENDPOINT = 'http://localhost:9999/'
