@@ -16,6 +16,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+# This is a hacky way to set text in the admin site, but it works...
+# https://stackoverflow.com/questions/4938491/django-admin-change-header-django-administration-text
+admin.sites.AdminSite.site_header = 'Hitchcock Smith Libraries e-reserves administration'
+admin.sites.AdminSite.site_title = 'Hitchcock Smith Libraries e-reserves administration'
+admin.sites.AdminSite.site_url = None # Disable "view site" link in header
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('uploads.urls')),
