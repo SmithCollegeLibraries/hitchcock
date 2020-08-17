@@ -43,6 +43,12 @@ VTT_SUBDIR_NAME = 'vtt/'
 WOWZA_ENDPOINT = 'http://ereserves.smith.edu:1935/reserves/_definst_/'
 TEXTS_ENDPOINT = 'https://ereserves.smith.edu/reserves/text/'
 
+# Set csrf and session cookies to "secure" to prevent the browser from
+# ever sending them over HTTPs.
+# https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/#https
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
 # logging
 #LOGGING = {
 #    'version': 1,
