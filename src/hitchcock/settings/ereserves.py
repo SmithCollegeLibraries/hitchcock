@@ -14,8 +14,10 @@ BASE_URL = "http://ereserves.smith.edu/hitchcock"
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'libsandbox.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'OPTIONS': {
+            'read_default_file': '/mnt/nfs/reserves/app/database.cnf',
+        },
     }
 }
 
@@ -28,9 +30,11 @@ MEDIA_ROOT = '/mnt/nfs/reserves/'
 AV_SUBDIR_NAME = 'av/'
 AUDIO_ALBUMS_SUBDIR_NAME = 'av/audio-albums/'
 TEXT_SUBDIR_NAME = 'text/'
+# VTT files are saved in a subdir under TEXT_SUBDIR_NAME
+VTT_SUBDIR_NAME = 'vtt/'
 # NOTE: _definst_/ required subdirectories to work in Wowza
 WOWZA_ENDPOINT = 'http://ereserves.smith.edu:1935/reserves/_definst_/'
-TEXTS_ENDPOINT = 'http://localhost:9999/'
+TEXTS_ENDPOINT = 'https://ereserves.smith.edu/reserves/text/'
 
 # logging
 LOGGING = {

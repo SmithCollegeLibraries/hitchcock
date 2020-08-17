@@ -154,3 +154,4 @@ settings.py
 .DS_Store
 libsandbox.sqlite3
 static
+database.cnf
