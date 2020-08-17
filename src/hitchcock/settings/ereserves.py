@@ -1,5 +1,11 @@
 from .base import *
 
+# List of people who get 500 error notifications:
+# https://docs.djangoproject.com/en/3.1/ref/settings/#std:setting-ADMINS
+ADMINS = [
+    ('Tristan Chambers', 'tchambers@smith.edu'),
+]
+
 # SECURITY WARNING: keep the secret key used in production secret!
 with open('/mnt/nfs/reserves/app/secret_key.txt') as f:
     SECRET_KEY = f.read().strip()
