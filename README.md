@@ -32,3 +32,13 @@ wsgi.py file, instead of via the environment variable. Like this:
 #os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hitchcock.settings')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hitchcock.settings.ereserves')
 ```
+## Trouble shooting
+
+If you try to run `manage.py` and get this error:
+
+```
+...
+django.core.exceptions.ImproperlyConfigured: The SECRET_KEY setting must not be empty.
+```
+
+It's because you didn't set the settings environment variable. Sett above.
