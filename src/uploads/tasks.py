@@ -12,13 +12,13 @@ def upload_to_panopto(id):
         True,
         settings.PANOPTO_AUTH_CACHE_FILE_PATH)
 
-    myvideo = models.Video.objects.get(id=id)
+    myavupload = models.Upload.objects.get(id=id)
 
-    myvideo.processing_status = "Uploading to Panopto..."
-    myvideo.save()
+    myavupload.processing_status = "Uploading to Panopto..."
+    myavupload.save()
     uploader = panopto_uploader.PanoptoUploader(settings.PANOPTO_SERVER, True, oauth2)
-    panopto_session_id = uploader.upload_video(settings.MEDIA_ROOT + myvideo.upload.name, settings.PANOPTO_FOLDER_ID)
-    myvideo.processing_status = "Processing complete"
-    myvideo.queued_for_processing = False
-    myvideo.panopto_session_id = panopto_session_id
-    myvideo.save()
+    panopto_session_id = uploader.upload_video(settings.MEDIA_ROOT + myavupload.upload.name, settings.PANOPTO_FOLDER_ID)
+    myavupload.processing_status = "Processing complete"
+    myavupload.queued_for_processing = False
+    myavupload.panopto_session_id = panopto_session_id
+    myavupload.save()

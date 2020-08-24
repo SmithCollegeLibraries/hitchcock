@@ -39,12 +39,10 @@ def play_audio(request, pk):
     obj = get_object_or_404(Audio, pk=pk)
     @staff_view_unpublished
     def render_audio(request, obj):
-        path_from_av = obj.upload.name.replace(settings.AV_SUBDIR_NAME, '')
-        wowza_url_hls = settings.WOWZA_ENDPOINT + 'mp3:' + path_from_av + '/playlist.m3u8'
         context = {
-            'wowza_url_hls': wowza_url_hls,
+            'panopto_session_id': obj.panopto_session_id,
         }
-        return render(request, 'uploads/video-player-theo.html', context)
+        return render(request, 'uploads/video-panopto-embed.html', context)
     return render_audio(request, obj)
 
 def play_audio_album(request, pk):

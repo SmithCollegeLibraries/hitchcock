@@ -39,7 +39,7 @@ class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
 class AudioAdmin(UploadChildAdmin):
     base_model = Audio  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'url', 'identifier', 'queued_for_processing')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'identifier', 'panopto_session_id', 'processing_status', 'queued_for_processing')
 
 class AudioAlubmInline(SortableTabularInline):
     model = AudioTrack

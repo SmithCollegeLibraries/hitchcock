@@ -111,14 +111,6 @@ class Video(Upload):
         else:
             return None
 
-@receiver(models.signals.post_save, sender=Video)
-def video_post_save(sender, instance, created, **kwargs):
-    if created:
-        upload_to_panopto(str(instance.id))
-        instance.queued_for_processing = True
-        instance.processing_status = "Added to queue, waiting for file to be uploaded to Panopto"
-        instance.save()
-
 class VideoVttTrack(SortableMixin):
     class Meta:
         ordering = ['vtt_order']
@@ -170,6 +162,9 @@ class Audio(Upload):
         max_length=1024,
         validators=[validate_audio,],
         help_text="mp3 format only")
+    panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
+    processing_status = models.CharField(max_length=256, blank=True, null=True)
+
     def url(self):
         print(type(self.created))
         if self.created is not None:
@@ -307,3 +302,13 @@ def update_upload_identifier(sender, instance, **kwargs):
     """Saves a text copy of the ID to a field for searching on
     """
     instance.identifier = str(instance.id)
+
+
+@receiver(models.signals.post_save, sender=Video)
+@receiver(models.signals.post_save, sender=Audio)
+def video_post_save(sender, instance, created, **kwargs):
+    if created:
+        upload_to_panopto(str(instance.id))
+        instance.queued_for_processing = True
+        instance.processing_status = "Added to queue, waiting for file to be uploaded to Panopto"
+        instance.save()
