@@ -156,3 +156,5 @@ libsandbox.sqlite3
 static
 database.cnf
 secret_key.txt
+venv-vagrant
+token*.cache

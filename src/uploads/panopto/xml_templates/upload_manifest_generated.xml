@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Session xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://tempuri.org/UniversalCaptureSpecification/v1">
+  <Title>ed_fuAlKyg.mp4</Title>
+  <Description>This is a video session with the uploaded video file ed_fuAlKyg.mp4</Description>
+  <Date>2020-08-24T19:50:51.433456-00:00</Date>
+  <ThumbnailTime>PT5S</ThumbnailTime>
+  <Videos>
+    <Video>
+      <Start>PT0S</Start>
+      <File>ed_fuAlKyg.mp4</File>
+      <Type>Primary</Type>
+    </Video>
+  </Videos>
+</Session>

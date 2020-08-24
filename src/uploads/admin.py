@@ -4,6 +4,16 @@ from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicI
 from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline, SortableStackedInline
 from django.utils.safestring import mark_safe
 from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text, VideoVttTrack
+from django.utils.html import format_html
+from .tasks import upload_to_panopto
+
+def queue_for_processing(modeladmin, request, queryset):
+    for item in queryset.all():
+        upload_to_panopto(str(item.id))
+        item.processing_status="Added to queue, waiting for file to be uploaded to Panopto"
+        item.queued_for_processing=True
+        item.save()
+queue_for_processing.short_description = "(re)Process selected items"
 
 class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
@@ -12,6 +22,7 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size', 'published')
     ordering = ('-modified',)
     list_filter = ('published',)
+    actions = [queue_for_processing,]
 
 class VideoVttTrackInline(SortableTabularInline):
     model = VideoVttTrack
@@ -21,14 +32,14 @@ class VideoVttTrackInline(SortableTabularInline):
 class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = Video  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'url', 'identifier')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'identifier', 'panopto_session_id', 'processing_status', 'queued_for_processing')
     inlines = [VideoVttTrackInline,]
 
 @admin.register(Audio)
 class AudioAdmin(UploadChildAdmin):
     base_model = Audio  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'url', 'identifier')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'identifier', 'queued_for_processing')
 
 class AudioAlubmInline(SortableTabularInline):
     model = AudioTrack
@@ -38,7 +49,7 @@ class AudioAlubmInline(SortableTabularInline):
 class AudioAlbumAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = AudioAlbum  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'url', 'album_directory', 'identifier')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'album_directory', 'identifier', 'queued_for_processing')
     inlines = [AudioAlubmInline,]
 
 @admin.register(Text)
@@ -46,7 +57,7 @@ class TextAdmin(UploadChildAdmin):
     base_model = Text  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
     list_display = ( 'title', 'text_type', 'barcode', 'created', 'modified', 'size', 'published')
-    readonly_fields = ('size', 'created', 'modified', 'url', 'text_type', 'identifier')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'text_type', 'identifier', 'queued_for_processing')
     list_filter = ('published', 'text_type')
     def get_readonly_fields(self, request, obj=None):
         """If obj is None that means the object is being created. In this case
@@ -56,9 +67,9 @@ class TextAdmin(UploadChildAdmin):
         after creation.
         """
         if obj is None:
-            return ['size', 'created', 'modified', 'url', 'identifier']
+            return ['size', 'created', 'modified', 'url', 'identifier', 'queued_for_processing']
         else:
-            return ['size', 'created', 'modified', 'url', 'text_type', 'identifier']
+            return ['size', 'created', 'modified', 'url', 'text_type', 'identifier', 'queued_for_processing']
 
 class MissingEReservesRecordFilter(admin.SimpleListFilter):
     title = "empty e-reserves url"
@@ -88,6 +99,8 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
     list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size', 'published', 'ereserves_record')
     search_fields = ['title', 'barcode', 'ereserves_record_url', 'identifier']
     ordering = ('-modified',)
+    actions = [queue_for_processing,]
+
     def type(self, obj):
         return obj.polymorphic_ctype
 
