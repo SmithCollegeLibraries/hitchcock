@@ -158,3 +158,4 @@ database.cnf
 secret_key.txt
 venv-vagrant
 token*.cache
+upload_manifest_generated.xml
