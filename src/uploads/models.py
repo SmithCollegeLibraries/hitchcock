@@ -28,7 +28,7 @@ class Upload(PolymorphicModel):
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
     size = models.IntegerField(blank=True, null=True)
-    published = models.BooleanField(default=False)
+    published = models.BooleanField(default=True)
     @property
     def name(self):
         if self.upload.name is not None:
