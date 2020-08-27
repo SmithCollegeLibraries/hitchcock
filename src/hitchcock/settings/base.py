@@ -109,3 +109,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
+
+# Explicitly set upload file permissions
+# Important! https://stackoverflow.com/questions/608579/django-file-uploads-permissions/608751#608751
+FILE_UPLOAD_PERMISSIONS = 0o644
+
