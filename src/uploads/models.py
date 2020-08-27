@@ -77,7 +77,7 @@ class Text(Upload):
         ('other', 'Other'),
     ]
 
-    text_type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article', help_text="Text type cannot be changed after saving.")
+    text_type = models.CharField(max_length=16, choices=TEXT_TYPES, help_text="Text type cannot be changed after saving.")
 
     @property
     def url(self):
