@@ -51,7 +51,7 @@ ROOT_URLCONF = 'hitchcock.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'hitchcock/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -113,4 +113,3 @@ USE_TZ = True
 # Explicitly set upload file permissions
 # Important! https://stackoverflow.com/questions/608579/django-file-uploads-permissions/608751#608751
 FILE_UPLOAD_PERMISSIONS = 0o644
-

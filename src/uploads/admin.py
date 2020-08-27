@@ -12,6 +12,15 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size', 'published')
     ordering = ('-modified',)
     list_filter = ('published',)
+    
+    class Media:
+        js = ('uploads/js/uploads-admin.js',)
+
+    def url(self, obj):
+        url_field = '''
+        <span id="hitchcock-url">{url}</span> &nbsp; <a href="{url}" target="_blank">view <i class="fas fa-external-link-alt" style="font-size: 12px;"></i></a> | <a href="#" id="copy-url-button">copy <i class="far fa-clipboard"></i></a>
+        '''
+        return mark_safe(url_field.format(url=obj.url))
 
 class VideoVttTrackInline(SortableTabularInline):
     model = VideoVttTrack

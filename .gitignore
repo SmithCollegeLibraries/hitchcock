@@ -153,7 +153,7 @@ htpass
 settings.py
 .DS_Store
 libsandbox.sqlite3
-static
+/static/
 database.cnf
 secret_key.txt
 venv-vagrant
