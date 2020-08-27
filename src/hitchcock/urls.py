@@ -15,6 +15,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
+from django.views.generic import RedirectView
 
 # This is a hacky way to set text in the admin site, but it works...
 # https://stackoverflow.com/questions/4938491/django-admin-change-header-django-administration-text
@@ -23,6 +25,8 @@ admin.sites.AdminSite.site_title = 'Hitchcock Smith Libraries e-reserves adminis
 admin.sites.AdminSite.site_url = None # Disable "view site" link in header
 
 urlpatterns = [
+    # Skip the uploads app index page and go directly to the changelist
+    path('admin/uploads/', RedirectView.as_view(url=settings.BASE_URL + '/admin/uploads/upload/')), 
     path('admin/', admin.site.urls),
     path('', include('uploads.urls')),
 ]
