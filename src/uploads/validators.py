@@ -24,5 +24,5 @@ def validate_barcode(field):
         int(field)
     except ValueError:
         raise ValidationError('Must be numbers only.')
-    if len(field) != 8:
-        raise ValidationError('Must be eight characters long.')
+    if len(field) != 15:
+        raise ValidationError('Must be fifteen characters long.')
