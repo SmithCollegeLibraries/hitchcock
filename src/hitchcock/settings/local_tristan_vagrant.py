@@ -6,7 +6,7 @@ SECRET_KEY = 'opensesame'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost",]
 BASE_URL = "http://localhost:8000"
 
 # Database
