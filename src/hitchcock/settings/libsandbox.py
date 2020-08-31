@@ -19,6 +19,11 @@ DATABASES = {
     }
 }
 
+# Backups
+# https://django-dbbackup.readthedocs.io/en/master/installation.html
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': '/var/www/html/hitchcock/data_backups'}
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 

@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'dbbackup',
     'adminsortable',
     'background_task',
     'uploads',
@@ -51,7 +52,7 @@ ROOT_URLCONF = 'hitchcock.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'hitchcock/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -109,3 +110,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
+
+# Explicitly set upload file permissions
+# Important! https://stackoverflow.com/questions/608579/django-file-uploads-permissions/608751#608751
+FILE_UPLOAD_PERMISSIONS = 0o644

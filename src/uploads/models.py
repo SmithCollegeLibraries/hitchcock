@@ -29,7 +29,7 @@ class Upload(PolymorphicModel):
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
     size = models.IntegerField(blank=True, null=True)
-    published = models.BooleanField(default=False)
+    published = models.BooleanField(default=True)
     queued_for_processing = models.BooleanField(default=False)
     @property
     def name(self):
@@ -79,7 +79,7 @@ class Text(Upload):
         ('other', 'Other'),
     ]
 
-    text_type = models.CharField(max_length=16, choices=TEXT_TYPES, default='article', help_text="Text type cannot be changed after saving.")
+    text_type = models.CharField(max_length=16, choices=TEXT_TYPES, help_text="Text type cannot be changed after saving.")
 
     @property
     def url(self):

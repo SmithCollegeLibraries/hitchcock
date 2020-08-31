@@ -24,6 +24,18 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     list_filter = ('published',)
     actions = [queue_for_processing,]
 
+    class Media:
+        js = ('uploads/js/uploads-admin.js',)
+
+    def url(self, obj):
+        if obj.url is not None:
+            url_field = '''
+            <span id="hitchcock-url">{url}</span> &nbsp; <a href="{url}" target="_blank">view <i class="fas fa-external-link-alt" style="font-size: 12px;"></i></a> | <a href="#" id="copy-url-button">copy <i class="far fa-clipboard"></i></a>
+            '''
+            return mark_safe(url_field.format(url=obj.url))
+        else:
+            return '-'
+
 class VideoVttTrackInline(SortableTabularInline):
     model = VideoVttTrack
     extra = 1
@@ -32,14 +44,14 @@ class VideoVttTrackInline(SortableTabularInline):
 class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = Video  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'url', 'identifier', 'panopto_session_id', 'processing_status', 'queued_for_processing')
+    readonly_fields = ('size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
     inlines = [VideoVttTrackInline,]
 
 @admin.register(Audio)
 class AudioAdmin(UploadChildAdmin):
     base_model = Audio  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'url', 'identifier', 'panopto_session_id', 'processing_status', 'queued_for_processing')
+    readonly_fields = ('size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
 
 class AudioAlubmInline(SortableTabularInline):
     model = AudioTrack
@@ -49,7 +61,7 @@ class AudioAlubmInline(SortableTabularInline):
 class AudioAlbumAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = AudioAlbum  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'url', 'album_directory', 'identifier', 'queued_for_processing')
+    readonly_fields = ('size', 'created', 'modified', 'album_directory', 'identifier', 'url', 'queued_for_processing')
     inlines = [AudioAlubmInline,]
 
 @admin.register(Text)
@@ -67,9 +79,9 @@ class TextAdmin(UploadChildAdmin):
         after creation.
         """
         if obj is None:
-            return ['size', 'created', 'modified', 'url', 'identifier', 'queued_for_processing']
+            return ['size', 'created', 'modified', 'identifier', 'url', 'queued_for_processing']
         else:
-            return ['size', 'created', 'modified', 'url', 'text_type', 'identifier', 'queued_for_processing']
+            return ['size', 'created', 'modified', 'text_type', 'identifier', 'url', 'queued_for_processing']
 
 class MissingEReservesRecordFilter(admin.SimpleListFilter):
     title = "empty e-reserves url"

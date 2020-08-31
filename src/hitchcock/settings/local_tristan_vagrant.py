@@ -6,7 +6,7 @@ SECRET_KEY = 'opensesame'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost",]
 BASE_URL = "http://localhost:8000"
 
 # Database
@@ -18,6 +18,11 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+# Backups
+# https://django-dbbackup.readthedocs.io/en/master/installation.html
+DBBACKUP_STORAGE = 'django.core.files.storage.FileSystemStorage'
+DBBACKUP_STORAGE_OPTIONS = {'location': '/vagrant/test_db_backups/'}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
