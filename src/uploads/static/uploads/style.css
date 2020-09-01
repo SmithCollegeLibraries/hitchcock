@@ -1,3 +1,11 @@
+.btn-primary {
+  background-color: #00526b;
+  border-color: #007fa6;
+}
+.btn-primary:hover {
+  background-color: #005e7a;
+  border-color: #007fa6;
+}
 /* Error Pages */
 .error-current-url {
   font-weight: bold;
