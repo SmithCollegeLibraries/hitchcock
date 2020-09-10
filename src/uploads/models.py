@@ -35,6 +35,16 @@ class Upload(PolymorphicModel):
             return self.upload.name.split('/')[-1]
         else:
             return None
+    @property
+    def reference_number(self):
+        """Generate a shorter version of the ID for use by users when refering
+        to objects in the system. Useful for reading over the phone. Still works
+        when searching in the Admin interface.
+
+        Turns this: 97070806-f73f-401b-8280-d19161e6749a
+        Into this: 97070806
+        """
+        return self.identifier.split('-')[0]
     # @property
     # def size(self):
     #     """Return size in MB
@@ -43,6 +53,11 @@ class Upload(PolymorphicModel):
 
     def __str__(self):
         return self.title
+
+    class Meta:
+        permissions = [
+            ("view_inventory", "Can view non-staff inventory of materials (for faculty)"),
+        ]
 
 ### Text i.e. pdf ###
 def text_upload_path(instance, filename):

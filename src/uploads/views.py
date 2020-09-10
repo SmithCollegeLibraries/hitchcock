@@ -2,8 +2,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
-from .models import Video, Audio, AudioAlbum, Text
+from django.contrib.auth.decorators import login_required, permission_required
+from .models import Video, Audio, AudioAlbum, Text, Upload
 import uuid
+
+@permission_required('uploads.view_inventory')
+def faculty_view_inventory(request):
+    context = {
+        'uploads': Upload.objects.order_by('title'),
+    }
+    return render(request, 'uploads/faculty_view_inventory.html', context)
 
 def staff_view_unpublished(render_func):
     """ Decorator for checking whether an item is unpublished.
