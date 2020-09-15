@@ -165,8 +165,8 @@ class Audio(Upload):
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
 
+    @property
     def url(self):
-        print(type(self.created))
         if self.created is not None:
             return settings.BASE_URL + "/audio/%s" % self.id
         else:
@@ -174,7 +174,7 @@ class Audio(Upload):
 
 class AudioAlbum(Upload):
     album_directory = models.CharField(max_length=512, blank=True, null=True)
-    
+    @property
     def url(self):
         if self.created is not None:
             return settings.BASE_URL + "/audio-album/%s" % self.id

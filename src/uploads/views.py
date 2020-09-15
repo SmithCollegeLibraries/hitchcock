@@ -1,7 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import Http404
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from .models import Video, Audio, AudioAlbum, Text
+import uuid
 
 def staff_view_unpublished(render_func):
     """ Decorator for checking whether an item is unpublished.
@@ -18,7 +20,12 @@ def staff_view_unpublished(render_func):
     return wrapper
 
 def show_text(request, pk):
-    obj = get_object_or_404(Text, pk=pk)
+    try:
+        obj = get_object_or_404(Text, pk=pk)
+    except ValidationError:
+        # Not a proper UUID, give a 404 in this case
+        raise Http404("Invalid identifier")
+
     @staff_view_unpublished
     def render_text(request, obj):
         pdf_url = obj.stream_url
@@ -26,7 +33,12 @@ def show_text(request, pk):
     return render_text(request, obj)
 
 def play_video(request, pk):
-    obj = get_object_or_404(Video, pk=pk)
+    try:
+        obj = get_object_or_404(Video, pk=pk)
+    except ValidationError:
+        # Not a proper UUID, give a 404 in this case
+        raise Http404("Invalid identifier")
+
     @staff_view_unpublished
     def render_video(request, obj):
         context = {
@@ -36,7 +48,12 @@ def play_video(request, pk):
     return render_video(request, obj)
 
 def play_audio(request, pk):
-    obj = get_object_or_404(Audio, pk=pk)
+    try:
+        obj = get_object_or_404(Audio, pk=pk)
+    except ValidationError:
+        # Not a proper UUID, give a 404 in this case
+        raise Http404("Invalid identifier")
+
     @staff_view_unpublished
     def render_audio(request, obj):
         context = {
@@ -46,7 +63,12 @@ def play_audio(request, pk):
     return render_audio(request, obj)
 
 def play_audio_album(request, pk):
-    obj = get_object_or_404(AudioAlbum, pk=pk)
+    try:
+        obj = get_object_or_404(AudioAlbum, pk=pk)
+    except ValidationError:
+        # Not a proper UUID, give a 404 in this case
+        raise Http404("Invalid identifier")
+
     @staff_view_unpublished
     def render_audio_album(request, obj):
         wowza_urls_hls = []
