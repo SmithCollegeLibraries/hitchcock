@@ -23,3 +23,11 @@
     margin: auto 1em;
   }
 }
+
+/* Faculty inventory listing view */
+table a {
+  color: #333;
+}
+table td.type {
+  white-space: nowrap;
+}
