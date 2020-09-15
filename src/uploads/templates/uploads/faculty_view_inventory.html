@@ -31,7 +31,7 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
   <tbody>    
   {% for upload in uploads %}
     <tr>
-      <td><a href="{{ upload.url }}">{{ upload.title }}</a></td><td class="type">{% firstof upload.get_text_type_display upload.polymorphic_ctype|title %}</td><td>{{ upload.reference_number }}</td>
+      <td>{{ upload.title }}</td><td class="type">{% firstof upload.get_text_type_display upload.polymorphic_ctype|title %}</td><td>{{ upload.reference_number }}</td>
     </tr>
   {% endfor %}
   </tbody>
