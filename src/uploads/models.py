@@ -302,13 +302,3 @@ def update_upload_identifier(sender, instance, **kwargs):
     """Saves a text copy of the ID to a field for searching on
     """
     instance.identifier = str(instance.id)
-
-
-@receiver(models.signals.post_save, sender=Video)
-@receiver(models.signals.post_save, sender=Audio)
-def video_post_save(sender, instance, created, **kwargs):
-    if created:
-        upload_to_panopto(str(instance.id))
-        instance.queued_for_processing = True
-        instance.processing_status = "Added to queue, waiting for file to be uploaded to Panopto"
-        instance.save()

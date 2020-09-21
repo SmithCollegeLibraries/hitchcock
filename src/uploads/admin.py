@@ -5,11 +5,13 @@ from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline, S
 from django.utils.safestring import mark_safe
 from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text, VideoVttTrack
 from django.utils.html import format_html
-from .tasks import upload_to_panopto
+from . import tasks
+from django import forms
+import copy
 
 def queue_for_processing(modeladmin, request, queryset):
     for item in queryset.all():
-        upload_to_panopto(str(item.id))
+        tasks.upload_to_panopto(str(item.id))
         item.processing_status="Added to queue, waiting for file to be uploaded to Panopto"
         item.queued_for_processing=True
         item.save()
@@ -39,12 +41,98 @@ class VideoVttTrackInline(SortableTabularInline):
     model = VideoVttTrack
     extra = 1
 
+class VideoAdminForm(forms.ModelForm):
+    upload_to_panopto = forms.BooleanField(required=False)
+
+    def save(self, commit=True):
+        upload_to_panopto = self.cleaned_data.get('upload_to_panopto', None)
+
+        # Get the form instance so I can write to its fields
+        instance = super(VideoAdminForm, self).save(commit=commit)
+
+        if upload_to_panopto is True:
+            tasks.upload_to_panopto(str(instance.id))
+            instance.queued_for_processing = True
+            instance.processing_status = "Added to queue, waiting for file to be uploaded to Panopto"
+
+        if commit:
+            instance.save()
+
+        return instance
+
+    class Meta:
+        model = Video
+        fields = "__all__"
+
 @admin.register(Video)
 class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
+    form = VideoAdminForm
     base_model = Video  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
+    readonly_fields = ['size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing']
     inlines = [VideoVttTrackInline,]
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            panopto_fields = [
+                'upload_to_panopto',
+                'panopto_session_id',
+                'processing_status',
+                'queued_for_processing',
+            ]
+        else:
+            if obj.panopto_session_id is None:
+                panopto_fields = [
+                    'upload_to_panopto',
+                    'panopto_session_id',
+                    'processing_status',
+                    'queued_for_processing',
+                ]
+            else:
+                panopto_fields = [
+                    'panopto_session_id',
+                    'processing_status',
+                    'queued_for_processing',
+                ]
+        
+        fieldsets = (
+            (None, {
+                'fields': (
+                    'title',
+                    'ereserves_record_url',
+                    'barcode',
+                    'form',
+                    'notes',
+                    'published',
+                    'upload',
+                    'size',
+                    'created',
+                    'modified',
+                    'identifier',
+                    'url',
+                )
+            }),
+            ("Panopto instance", {
+                'fields': panopto_fields,
+            }),
+        )
+        return fieldsets
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Allow editing panopto_session_id when creating. But once it is set,
+        by uploading a panopto session don't allow it to be edited after that.
+        """
+        # Make a copy of readonly_fields that doesn't have the session id field
+        _ = copy.copy(self.readonly_fields)
+        _.remove('panopto_session_id')
+        readonly_fields_sans_panopto_session_id = _
+
+        if obj is not None:
+            if obj.processing_status == "Processing complete":
+                return self.readonly_fields
+            else:
+                return readonly_fields_sans_panopto_session_id
+        else:
+            return readonly_fields_sans_panopto_session_id
 
 @admin.register(Audio)
 class AudioAdmin(UploadChildAdmin):
