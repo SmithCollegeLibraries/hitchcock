@@ -9,9 +9,10 @@ import pprint
 import webbrowser
 from http.server import BaseHTTPRequestHandler
 from socketserver import ThreadingTCPServer
+from django.conf import settings
 
 # This code uses this local URL as redirect target for Authorization Code Grant (Server-side Web Application)
-REDIRECT_URL = 'http://localhost:8000/redirect'
+REDIRECT_URL = settings.BASE_URL + '/panopto-auth2-redirect'
 REDIRECT_PORT = 9127
 
 # Typical scope for accessing Panopto API.
@@ -98,23 +99,10 @@ class PanoptoOAuth2():
         print('Opening the browser for authorization: {0}'.format(authorization_url))
         return authorization_url
 
-    def get_redirected_path(self):
-
-        # Launch HTTP server to receive the redirect after authorization.
-        redirected_path = ''
-        httpd = RedirectTCPServer()
-        print('HTTP server started at port {0}. Waiting for redirect.'.format(REDIRECT_PORT))
-        # Serve one request.
-        httpd.handle_request()
-        # The property may not be readable immediately. Wait until it becomes valid.
-        while httpd.last_get_path is None:
-            time.sleep(1)
-        redirected_path = httpd.last_get_path
-
-        return {
-            "redirected_path": redirected_path,
-            "session": session,
-        }
+    def get_redirected_path(self, redirected_path):
+        scope = list(DEFAULT_SCOPE) + ['offline_access']
+        session = OAuth2Session(self.client_id, scope = scope, redirect_uri = REDIRECT_URL)
+        session.verify = self.ssl_verify
 
         print()
         print('Get a new access token with authorization code, which is provided as return path: {0}'.format(redirected_path))

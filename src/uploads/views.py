@@ -1,11 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from .models import Video, Audio, AudioAlbum, Text
 import uuid
 from .panopto import panopto_oauth2
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def renew_panopto_token(request):
     oauth2 = panopto_oauth2.PanoptoOAuth2(
         settings.PANOPTO_SERVER,
@@ -13,13 +15,32 @@ def renew_panopto_token(request):
         settings.PANOPTO_CLIENT_SECRET,
         True,
         settings.PANOPTO_AUTH_CACHE_FILE_PATH)
+#    result = oauth2.get_new_token()
     result = oauth2.get_authorization_url()
-    request.session['oath2'] = oauth2
+    oauth_state = {
+        'access_token_endpoint': oauth2.access_token_endpoint,
+        'authorization_endpoint': oauth2.authorization_endpoint,
+        'cache_file': oauth2.cache_file,
+        'client_id': oauth2.client_id,
+        'client_secret': oauth2.client_secret,
+        'ssl_verify': oauth2.ssl_verify,
+    }
+    request.session['oath_state'] = oauth_state
     return redirect(result)
 
-def hahaha_redirect(request):
-    import pdb; pdb.set_trace()
-    pass
+@login_required
+def panopto_oauth2_redirect(request):
+    oauth2 = panopto_oauth2.PanoptoOAuth2(
+        settings.PANOPTO_SERVER,
+        settings.PANOPTO_CLIENT_ID,
+        settings.PANOPTO_CLIENT_SECRET,
+        True,
+        settings.PANOPTO_AUTH_CACHE_FILE_PATH)
+    token = oauth2.get_redirected_path(request.get_full_path())
+    if token is not None:
+        return HttpResponse("<p>Authorization complete! <pre>%s</pre></p> <p>New refresh token saved to <pre>%s</pre></p>" % (token, settings.PANOPTO_AUTH_CACHE_FILE_PATH))
+    else:
+        return HttpResponse("Authorization failed! No token found.")
 
 def staff_view_unpublished(render_func):
     """ Decorator for checking whether an item is unpublished.
