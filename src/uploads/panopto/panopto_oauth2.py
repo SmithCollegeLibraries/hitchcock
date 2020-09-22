@@ -11,7 +11,7 @@ from http.server import BaseHTTPRequestHandler
 from socketserver import ThreadingTCPServer
 
 # This code uses this local URL as redirect target for Authorization Code Grant (Server-side Web Application)
-REDIRECT_URL = 'http://localhost:9127/redirect'
+REDIRECT_URL = 'http://localhost:8000/redirect'
 REDIRECT_PORT = 9127
 
 # Typical scope for accessing Panopto API.
@@ -78,6 +78,43 @@ class PanoptoOAuth2():
         while httpd.last_get_path is None:
             time.sleep(1)
         redirected_path = httpd.last_get_path
+
+        print()
+        print('Get a new access token with authorization code, which is provided as return path: {0}'.format(redirected_path))
+        session.fetch_token(self.access_token_endpoint, client_secret = self.client_secret, authorization_response = redirected_path)
+        self.__save_token_to_cache(session.token)
+
+        return session.token['access_token']
+
+    def get_authorization_url(self):
+        # Then, fallback to the full autorization path. Offline access scope is needed to get refresh token.
+        scope = list(DEFAULT_SCOPE) + ['offline_access']
+        session = OAuth2Session(self.client_id, scope = scope, redirect_uri = REDIRECT_URL)
+        session.verify = self.ssl_verify
+        
+        # Open the authorization page by the browser.
+        authorization_url, state = session.authorization_url(self.authorization_endpoint)
+        print()
+        print('Opening the browser for authorization: {0}'.format(authorization_url))
+        return authorization_url
+
+    def get_redirected_path(self):
+
+        # Launch HTTP server to receive the redirect after authorization.
+        redirected_path = ''
+        httpd = RedirectTCPServer()
+        print('HTTP server started at port {0}. Waiting for redirect.'.format(REDIRECT_PORT))
+        # Serve one request.
+        httpd.handle_request()
+        # The property may not be readable immediately. Wait until it becomes valid.
+        while httpd.last_get_path is None:
+            time.sleep(1)
+        redirected_path = httpd.last_get_path
+
+        return {
+            "redirected_path": redirected_path,
+            "session": session,
+        }
 
         print()
         print('Get a new access token with authorization code, which is provided as return path: {0}'.format(redirected_path))

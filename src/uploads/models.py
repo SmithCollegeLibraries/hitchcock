@@ -102,7 +102,9 @@ class Video(Upload):
         validators=[validate_video,],
         help_text="mp4 format only")
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
+    lock_panopto_session_id = models.BooleanField(default=False)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
+
 
     @property
     def url(self):

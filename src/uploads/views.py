@@ -4,6 +4,22 @@ from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from .models import Video, Audio, AudioAlbum, Text
 import uuid
+from .panopto import panopto_oauth2
+
+def renew_panopto_token(request):
+    oauth2 = panopto_oauth2.PanoptoOAuth2(
+        settings.PANOPTO_SERVER,
+        settings.PANOPTO_CLIENT_ID,
+        settings.PANOPTO_CLIENT_SECRET,
+        True,
+        settings.PANOPTO_AUTH_CACHE_FILE_PATH)
+    result = oauth2.get_authorization_url()
+    request.session['oath2'] = oauth2
+    return redirect(result)
+
+def hahaha_redirect(request):
+    import pdb; pdb.set_trace()
+    pass
 
 def staff_view_unpublished(render_func):
     """ Decorator for checking whether an item is unpublished.
