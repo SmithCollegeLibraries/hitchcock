@@ -1,9 +1,46 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from .models import Video, Audio, AudioAlbum, Text
 import uuid
+from .panopto import panopto_oauth2
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def renew_panopto_token(request):
+    oauth2 = panopto_oauth2.PanoptoOAuth2(
+        settings.PANOPTO_SERVER,
+        settings.PANOPTO_CLIENT_ID,
+        settings.PANOPTO_CLIENT_SECRET,
+        True,
+        settings.PANOPTO_AUTH_CACHE_FILE_PATH)
+#    result = oauth2.get_new_token()
+    result = oauth2.get_authorization_url()
+    oauth_state = {
+        'access_token_endpoint': oauth2.access_token_endpoint,
+        'authorization_endpoint': oauth2.authorization_endpoint,
+        'cache_file': oauth2.cache_file,
+        'client_id': oauth2.client_id,
+        'client_secret': oauth2.client_secret,
+        'ssl_verify': oauth2.ssl_verify,
+    }
+    request.session['oath_state'] = oauth_state
+    return redirect(result)
+
+@login_required
+def panopto_oauth2_redirect(request):
+    oauth2 = panopto_oauth2.PanoptoOAuth2(
+        settings.PANOPTO_SERVER,
+        settings.PANOPTO_CLIENT_ID,
+        settings.PANOPTO_CLIENT_SECRET,
+        True,
+        settings.PANOPTO_AUTH_CACHE_FILE_PATH)
+    token = oauth2.get_redirected_path(request.get_full_path())
+    if token is not None:
+        return HttpResponse("<p>Authorization complete! <pre>%s</pre></p> <p>New refresh token saved to <pre>%s</pre></p>" % (token, settings.PANOPTO_AUTH_CACHE_FILE_PATH))
+    else:
+        return HttpResponse("Authorization failed! No token found.")
 
 def staff_view_unpublished(render_func):
     """ Decorator for checking whether an item is unpublished.
@@ -41,20 +78,12 @@ def play_video(request, pk):
 
     @staff_view_unpublished
     def render_video(request, obj):
-        path_from_av = obj.upload.name.replace(settings.AV_SUBDIR_NAME, '')
-        wowza_url_hls = settings.WOWZA_ENDPOINT + 'mp4:' + path_from_av + '/playlist.m3u8'
-
-        _vtt_tracks = obj.videovtttrack_set.all()
-        if len(_vtt_tracks) > 0:
-            vtt_tracks = _vtt_tracks
-        else:
-            vtt_tracks = None
-
-        context = {
-            'wowza_url_hls': wowza_url_hls,
-            'vtt_tracks': vtt_tracks,
-        }
-        return render(request, 'uploads/video-player-theo.html', context)
+        panopto_url = 'https://' + settings.PANOPTO_SERVER + '/Panopto/Pages/Viewer.aspx?id=' + obj.panopto_session_id
+        return redirect(panopto_url)
+        # context = {
+        #     'panopto_session_id': obj.panopto_session_id,
+        # }
+        # return render(request, 'uploads/video-panopto-embed.html', context)
     return render_video(request, obj)
 
 def play_audio(request, pk):
@@ -66,12 +95,10 @@ def play_audio(request, pk):
 
     @staff_view_unpublished
     def render_audio(request, obj):
-        path_from_av = obj.upload.name.replace(settings.AV_SUBDIR_NAME, '')
-        wowza_url_hls = settings.WOWZA_ENDPOINT + 'mp3:' + path_from_av + '/playlist.m3u8'
         context = {
-            'wowza_url_hls': wowza_url_hls,
+            'panopto_session_id': obj.panopto_session_id,
         }
-        return render(request, 'uploads/video-player-theo.html', context)
+        return render(request, 'uploads/video-panopto-embed.html', context)
     return render_audio(request, obj)
 
 def play_audio_album(request, pk):

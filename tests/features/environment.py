@@ -5,6 +5,13 @@ import sys
 
 BEHAVE_DEBUG_ON_ERROR = True
 
+# -- FILE: features/environment.py
+# USE: behave -D BEHAVE_DEBUG_ON_ERROR         (to enable  debug-on-error)
+# USE: behave -D BEHAVE_DEBUG_ON_ERROR=yes     (to enable  debug-on-error)
+# USE: behave -D BEHAVE_DEBUG_ON_ERROR=no      (to disable debug-on-error)
+
+BEHAVE_DEBUG_ON_ERROR = True
+
 ENVIRONMENT_SETTINGS = {
     'local': {
         'base_url': 'http://localhost:8000',

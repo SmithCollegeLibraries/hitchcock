@@ -4,6 +4,18 @@ from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicI
 from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline, SortableStackedInline
 from django.utils.safestring import mark_safe
 from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text, VideoVttTrack
+from django.utils.html import format_html
+from . import tasks
+from django import forms
+import copy
+
+def queue_for_processing(modeladmin, request, queryset):
+    for item in queryset.all():
+        tasks.upload_to_panopto(str(item.id))
+        item.processing_status="Added to queue, waiting for file to be uploaded to Panopto"
+        item.queued_for_processing=True
+        item.save()
+queue_for_processing.short_description = "(re)Process selected items"
 
 class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
@@ -12,7 +24,8 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size', 'published')
     ordering = ('-modified',)
     list_filter = ('published',)
-    
+    actions = [queue_for_processing,]
+
     class Media:
         js = ('uploads/js/uploads-admin.js',)
 
@@ -28,18 +41,104 @@ class VideoVttTrackInline(SortableTabularInline):
     model = VideoVttTrack
     extra = 1
 
+class VideoAdminForm(forms.ModelForm):
+    upload_to_panopto = forms.BooleanField(required=False)
+
+    def save(self, commit=True):
+        upload_to_panopto = self.cleaned_data.get('upload_to_panopto', None)
+
+        # Get the form instance so I can write to its fields
+        instance = super(VideoAdminForm, self).save(commit=commit)
+
+        if upload_to_panopto is True:
+            tasks.upload_to_panopto(str(instance.id))
+            instance.queued_for_processing = True
+            instance.processing_status = "Added to queue, waiting for file to be uploaded to Panopto"
+
+        if commit:
+            instance.save()
+
+        return instance
+
+    class Meta:
+        model = Video
+        fields = "__all__"
+
 @admin.register(Video)
 class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
+    form = VideoAdminForm
     base_model = Video  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'identifier', 'url')
-    inlines = [VideoVttTrackInline,]
+    readonly_fields = ['size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing']
+#    inlines = [VideoVttTrackInline,]
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            panopto_fields = [
+                'upload_to_panopto',
+                'panopto_session_id',
+                'processing_status',
+                'queued_for_processing',
+            ]
+        else:
+            if obj.panopto_session_id is None:
+                panopto_fields = [
+                    'upload_to_panopto',
+                    'panopto_session_id',
+                    'processing_status',
+                    'queued_for_processing',
+                ]
+            else:
+                panopto_fields = [
+                    'panopto_session_id',
+                    'processing_status',
+                    'queued_for_processing',
+                ]
+        
+        fieldsets = (
+            (None, {
+                'fields': (
+                    'title',
+                    'ereserves_record_url',
+                    'barcode',
+                    'form',
+                    'notes',
+                    'published',
+                    'upload',
+                    'size',
+                    'created',
+                    'modified',
+                    'identifier',
+                    'url',
+                )
+            }),
+            ("Panopto instance", {
+                'fields': panopto_fields,
+            }),
+        )
+        return fieldsets
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Allow editing panopto_session_id when creating. But once it is set,
+        by uploading a panopto session don't allow it to be edited after that.
+        """
+        # Make a copy of readonly_fields that doesn't have the session id field
+        _ = copy.copy(self.readonly_fields)
+        _.remove('panopto_session_id')
+        readonly_fields_sans_panopto_session_id = _
+
+        if obj is not None:
+            if obj.lock_panopto_session_id is True:
+                return self.readonly_fields
+            else:
+                return readonly_fields_sans_panopto_session_id
+        else:
+            return readonly_fields_sans_panopto_session_id
 
 @admin.register(Audio)
 class AudioAdmin(UploadChildAdmin):
     base_model = Audio  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'identifier', 'url')
+    readonly_fields = ('size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
 
 class AudioAlubmInline(SortableTabularInline):
     model = AudioTrack
@@ -49,7 +148,7 @@ class AudioAlubmInline(SortableTabularInline):
 class AudioAlbumAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = AudioAlbum  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'album_directory', 'identifier', 'url')
+    readonly_fields = ('size', 'created', 'modified', 'album_directory', 'identifier', 'url', 'queued_for_processing')
     inlines = [AudioAlubmInline,]
 
 @admin.register(Text)
@@ -57,7 +156,7 @@ class TextAdmin(UploadChildAdmin):
     base_model = Text  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
     list_display = ( 'title', 'text_type', 'barcode', 'created', 'modified', 'size', 'published')
-    readonly_fields = ('size', 'created', 'modified', 'url', 'text_type', 'identifier')
+    readonly_fields = ('size', 'created', 'modified', 'url', 'text_type', 'identifier', 'queued_for_processing')
     list_filter = ('published', 'text_type')
     def get_readonly_fields(self, request, obj=None):
         """If obj is None that means the object is being created. In this case
@@ -67,9 +166,9 @@ class TextAdmin(UploadChildAdmin):
         after creation.
         """
         if obj is None:
-            return ['size', 'created', 'modified', 'identifier', 'url']
+            return ['size', 'created', 'modified', 'identifier', 'url', 'queued_for_processing']
         else:
-            return ['size', 'created', 'modified', 'text_type', 'identifier', 'url']
+            return ['size', 'created', 'modified', 'text_type', 'identifier', 'url', 'queued_for_processing']
 
 class MissingEReservesRecordFilter(admin.SimpleListFilter):
     title = "empty e-reserves url"
@@ -90,7 +189,7 @@ class MissingEReservesRecordFilter(admin.SimpleListFilter):
 class UploadParentAdmin(PolymorphicParentModelAdmin):
     """ The parent model admin """
     base_model = Upload  # Optional, explicitly set here.
-    child_models = (Video, Audio, AudioAlbum, Text)
+    child_models = (Text, Video)
     list_filter = (
         PolymorphicChildModelFilter,
         MissingEReservesRecordFilter,
@@ -99,6 +198,8 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
     list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size', 'published', 'ereserves_record')
     search_fields = ['title', 'barcode', 'ereserves_record_url', 'identifier']
     ordering = ('-modified',)
+    actions = [queue_for_processing,]
+
     def type(self, obj):
         return obj.polymorphic_ctype
 

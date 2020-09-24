@@ -7,6 +7,7 @@ from django.core.files.storage import DefaultStorage
 from django.db.models.query_utils import DeferredAttribute
 from adminsortable.fields import SortableForeignKey
 from adminsortable.models import SortableMixin
+from .tasks import upload_to_panopto
 from .codes import ISO_LANGUAGE_CODES
 import uuid
 import os
@@ -29,6 +30,7 @@ class Upload(PolymorphicModel):
     created = models.DateTimeField(auto_now_add=True)
     size = models.IntegerField(blank=True, null=True)
     published = models.BooleanField(default=True)
+    queued_for_processing = models.BooleanField(default=False)
     @property
     def name(self):
         if self.upload.name is not None:
@@ -99,6 +101,11 @@ class Video(Upload):
         max_length=1024,
         validators=[validate_video,],
         help_text="mp4 format only")
+    panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
+    lock_panopto_session_id = models.BooleanField(default=False)
+    processing_status = models.CharField(max_length=256, blank=True, null=True)
+
+
     @property
     def url(self):
         if self.created is not None:
@@ -157,6 +164,9 @@ class Audio(Upload):
         max_length=1024,
         validators=[validate_audio,],
         help_text="mp3 format only")
+    panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
+    processing_status = models.CharField(max_length=256, blank=True, null=True)
+
     @property
     def url(self):
         if self.created is not None:
