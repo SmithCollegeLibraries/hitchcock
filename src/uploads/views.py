@@ -78,10 +78,12 @@ def play_video(request, pk):
 
     @staff_view_unpublished
     def render_video(request, obj):
-        context = {
-            'panopto_session_id': obj.panopto_session_id,
-        }
-        return render(request, 'uploads/video-panopto-embed.html', context)
+        panopto_url = 'https://' + settings.PANOPTO_SERVER + '/Panopto/Pages/Viewer.aspx?id=' + obj.panopto_session_id
+        return redirect(panopto_url)
+        # context = {
+        #     'panopto_session_id': obj.panopto_session_id,
+        # }
+        # return render(request, 'uploads/video-panopto-embed.html', context)
     return render_video(request, obj)
 
 def play_audio(request, pk):
