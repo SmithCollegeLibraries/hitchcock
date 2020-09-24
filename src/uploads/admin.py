@@ -70,7 +70,7 @@ class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = Video  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
     readonly_fields = ['size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing']
-    inlines = [VideoVttTrackInline,]
+#    inlines = [VideoVttTrackInline,]
     def get_fieldsets(self, request, obj=None):
         if obj is None:
             panopto_fields = [
@@ -189,7 +189,7 @@ class MissingEReservesRecordFilter(admin.SimpleListFilter):
 class UploadParentAdmin(PolymorphicParentModelAdmin):
     """ The parent model admin """
     base_model = Upload  # Optional, explicitly set here.
-    child_models = (Video, Audio, AudioAlbum, Text)
+    child_models = (Text, Video)
     list_filter = (
         PolymorphicChildModelFilter,
         MissingEReservesRecordFilter,
