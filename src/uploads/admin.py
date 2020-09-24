@@ -127,7 +127,7 @@ class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
         readonly_fields_sans_panopto_session_id = _
 
         if obj is not None:
-            if obj.processing_status == "Processing complete":
+            if obj.lock_panopto_session_id is True:
                 return self.readonly_fields
             else:
                 return readonly_fields_sans_panopto_session_id

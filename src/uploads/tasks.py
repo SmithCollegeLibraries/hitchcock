@@ -21,4 +21,5 @@ def upload_to_panopto(id):
     myavupload.processing_status = "Processing complete"
     myavupload.queued_for_processing = False
     myavupload.panopto_session_id = panopto_session_id
+    myavupload.lock_panopto_session_id = True
     myavupload.save()
