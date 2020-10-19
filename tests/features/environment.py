@@ -2,6 +2,9 @@
 import behave_webdriver
 import logging
 import sys
+import os
+import time
+import re
 
 BEHAVE_DEBUG_ON_ERROR = True
 
@@ -10,7 +13,21 @@ BEHAVE_DEBUG_ON_ERROR = True
 # USE: behave -D BEHAVE_DEBUG_ON_ERROR=yes     (to enable  debug-on-error)
 # USE: behave -D BEHAVE_DEBUG_ON_ERROR=no      (to disable debug-on-error)
 
-BEHAVE_DEBUG_ON_ERROR = True
+EXEC_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)
+
+# Helper function
+def get_valid_filename(s):
+    """
+    Return the given string converted to a string that can be used for a clean
+    filename. Remove leading and trailing spaces; convert other spaces to
+    underscores; and remove anything that is not an alphanumeric, dash,
+    underscore, or dot.
+    >>> get_valid_filename("john's portrait in 2004.jpg")
+    'johns_portrait_in_2004.jpg'
+    """
+    s = str(s).strip().replace(' ', '-')
+    return re.sub(r'(?u)[^-\w.]', '_', s)
+
 
 ENVIRONMENT_SETTINGS = {
     'local': {
@@ -43,6 +60,17 @@ def before_all(context):
 def after_all(context):
     # cleanup after tests run
     context.behave_driver.quit()
+
+def after_scenario(context, scenario):
+    # Take screenshot if scenario fails
+    if scenario.status == 'failed':
+        screenshot_path = EXEC_PATH + '/screenshots/on_failure/' + \
+        time.strftime("%Y-%m-%d-%H%M%S--") + \
+        scenario.feature.name.replace(' ', '_') + '--' + \
+        get_valid_filename(context.behave_driver.current_url) + \
+        '.png'
+        context.behave_driver.save_screenshot(screenshot_path)
+        print("Screenshot saved to: " + screenshot_path)
 
 def setup_debug_on_error(userdata):
     global BEHAVE_DEBUG_ON_ERROR

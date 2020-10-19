@@ -28,7 +28,7 @@ class Upload(PolymorphicModel):
     notes = models.TextField(blank=True, null=True)
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
-    size = models.IntegerField(blank=True, null=True)
+    size = models.BigIntegerField(blank=True, null=True)
     published = models.BooleanField(default=True)
     queued_for_processing = models.BooleanField(default=False)
     @property
@@ -259,7 +259,7 @@ def update_album_size(sender, instance, **kwargs):
         sum_size += track_size
     instance.album.size = sum_size
     instance.album.save()
-        
+
 
 @receiver(models.signals.post_delete, sender=AudioTrack)
 def auto_delete_track_on_delete(sender, instance, **kwargs):

@@ -21,5 +21,5 @@ Feature: Everything
     | object_type | asset_viewer  |
     | text        | pdf viewer    |
     | video       | av player     |
-    | audio       | av player     |
-    | audio album | av player     |
+#    | audio       | av player     |
+#    | audio album | av player     |
