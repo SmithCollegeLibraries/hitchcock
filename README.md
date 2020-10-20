@@ -1,9 +1,7 @@
 Hitchcock is a web application for managing and providing access to locally hosted electronic reserves materials.
 
 # Setup
-Requires Python 3.5 or later. 
-
-For a local development environment:
+Requires Python 3.5 or later.
 
 ``` bash
 python3 -m venv venv
@@ -11,34 +9,66 @@ source venv/bin/activate
 pip install -r requirements.txt
 patches/apply_patches.sh
 
-# You must specify the settings file before running Django e.g.
-export DJANGO_SETTINGS_MODULE=hitchcock.settings.local_tristan
+cp src/hitchcock/settings_copy_me.py src/hitchcock/settings.py
+# ... edit src/hitchcock/settings.py ...
 
 python manage.py runserver
 ```
 
-To make a new settings file:
+# Tests
+Tests are in `tests/`. See `tests/README.md`.
 
-``` bash
-cp src/hitchcock/settings/local_tristan.py src/hitchcock/settings/local_me.py
-# ... edit src/hitchcock/settings/local_me.py ...
-export DJANGO_SETTINGS_MODULE=hitchcock.settings.local_me
+# Set up MEDIA_ROOT
+- Chose a location with adequate storage for Hitchcock to store uploaded asset files. E.g. `/var/www/html/hitchcock_files`.
+- Make sure it's writable by the user/group that the Hitchcock web service runs as.
+- Set the MEDIA_ROOT variable in `src/hitchcock/settings.py`.
+
+# Setting up serving Text materials
+Hitchcock relies on an external web server (such as Apache or NGINX) to serve text materials.
+
+## Setup
+- Point your web server to a directory from which to serve the text files. The default subdirectory for text materials under MEDIA_ROOT is 'text/' so for example the website directory would be `/var/www/html/hitchcock_files/text/`
+- Set the `TEXTS_ENDPOINT` variable in `src/hitchcock/settings.py` to the web location that the web server is configured to
+
+# Panopto Upload API integration
+
+Hitchcock uses the Panopto streaming service for transcoding and delivering AV content. When the user checks "Upload to panopto" and submits the Video edit page, Hitchcock will upload the asset to the Panopto service for ingest and automatically update the Panopto session id field. Hitchcock uses the Panopto Upload API to accomplish this. If the user opts not to automatically upload the file to Panopto they may also manually paste in an existing Panopto session ID into the Panopto session id field.
+
+## Quick Setup
+
+### API Client Setup
+- Log into Panopto with an administrator account
+- Under System create an API Client
+- Set the Client Type to 'Server-side Web Application'
+- Add a CORS Origin URL set to the fully qualified Hitchcock base url
+- Add a Redirect URL constructed thusly: [HITCHCOCK_BASE_URL]/panopto-auth2-redirect
+- Edit the variables in PANOPTO SETTINGS section in `src/hitchcock/settings.py` filling in the values from the API client like
+- Make sure that the PANOPTO_UPLOAD_MANIFEST_TEMPLATES and PANOPTO_AUTH_CACHE_FILE_PATH paths are writable by the user/group that the Hitchcock web service runs as.
+
+### Oauth2 bearer token creation
+Log in as a super user in Hitchcock and point your web browser to [HITCHCOCK_BASE_URL]/admin/renew-panopto-token. This will redirect you to a Panopto log-in page and automatically redirect you back to the Hitchcock Oauth2 redirect endpoint (/panopto-auth2-redirect) which will consume the bearer token and cache it for later use.
+Hence forth the API authentication should be set up and should require possibly only a very occasional retrial of the above steps.
+
+### Set up Panopto upload background processing cron job
+Add a line to your crontab that looks something like this:
+
+```
+0 */3 * * * .../venv/bin/python .../app/src/manage.py process_tasks --duration 10800
 ```
 
-In a production setting you will probably want to set the configuration in the
-wsgi.py file, instead of via the environment variable. Like this:
+Make sure you add the full path to the Python executable in your venv directory and the manage.py file.
 
-``` python
-#os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hitchcock.settings')
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'hitchcock.settings.ereserves')
-```
-## Trouble shooting
+## Background
+### API
+Hitchcock uses the Panopto Upload API to upload AV to Panopto (https://support.panopto.com/s/article/Upload-API). Uploads to Panopto are called "sessions". Upon creation of a "session" the API returns a "session id" which is used to retrieve the AV in the future. Hitchcock automatically grabs the session id after upload and adds it to the "panopto session id" field after successful creation.
 
-If you try to run `manage.py` and get this error:
+### API Client Authentication
+Once the API Client is set up on the Panopto side and the settings are configured in the Hitchcock settings file you must generate the initial bearer token which will ask you to log in to authorize the API connection from Hitchcock.
+To do this log in as a super user in Hitchcock and point your web browser to [HITCHCOCK_BASE_URL]/admin/renew-panopto-token. This will redirect you to a Panopto log-in page and automatically redirect you back to the Hitchcock Oauth2 redirect endpoint (/panopto-auth2-redirect) which will consume the bearer token and cache it for later use.
+Hence forth the API authentication should be set up and should require possibly only a very occasional retrial of the above steps.
 
-```
-...
-django.core.exceptions.ImproperlyConfigured: The SECRET_KEY setting must not be empty.
-```
+### Background tasks
+In order to outlast the temporary duration of a web request, Hitchcock backgrounds the process of uploading to and waiting for Panopto to transcode the files. Hitchcock uses the Django app called django-background-tasks to create a queue of upload tasks. In order for the tasks to be processed the 'process-tasks' manage.py command must be running. On a local environment this can be triggered by using the command `python manage.py process-tasks`. But on a live system this should be setup as a cron job matched to the command's expiration setting. (https://django-background-tasks.readthedocs.io/en/latest/#running-tasks)
 
-It's because you didn't set the settings environment variable. Sett above.
+### Fulfilling requests
+When a Hitchcock video URL is requested the system looks up the Panopto session id and redirects the user's browser to the Panopto session player page.
