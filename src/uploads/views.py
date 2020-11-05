@@ -7,6 +7,18 @@ import uuid
 from .panopto import panopto_oauth2
 from django.contrib.auth.decorators import login_required
 
+def shib_bounce(request):
+    """This view is for bouncing the user to the desired location after they
+    have authenticated with Shibboleth and been bounced back to /login.
+    Assumes that a 'next' argument has been set in the URL. E.g.
+    '/login?next=/inventory/'.
+    """
+    try:
+        next = request.GET['next']
+    except KeyError:
+        raise Http404("No bounce destination.")
+    return redirect(settings.BASE_URL + '/' + next)
+
 @login_required
 def renew_panopto_token(request):
     oauth2 = panopto_oauth2.PanoptoOAuth2(
