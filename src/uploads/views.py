@@ -3,10 +3,10 @@ from django.http import Http404, HttpResponse
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.admin.views.decorators import staff_member_required
 from .models import Video, Audio, AudioAlbum, Text, Upload
 import uuid
 from .panopto import panopto_oauth2
-from django.contrib.auth.decorators import login_required
 
 def shib_bounce(request):
     """This view is for bouncing the user to the desired location after they
@@ -20,7 +20,7 @@ def shib_bounce(request):
         raise Http404("No bounce destination.")
     return redirect(settings.BASE_URL + '/' + next)
 
-@login_required
+@staff_member_required
 def renew_panopto_token(request):
     oauth2 = panopto_oauth2.PanoptoOAuth2(
         settings.PANOPTO_SERVER,
@@ -41,7 +41,7 @@ def renew_panopto_token(request):
     request.session['oath_state'] = oauth_state
     return redirect(result)
 
-@login_required
+@staff_member_required
 def panopto_oauth2_redirect(request):
     oauth2 = panopto_oauth2.PanoptoOAuth2(
         settings.PANOPTO_SERVER,
