@@ -18,7 +18,7 @@ def shib_bounce(request):
         next = request.GET['next']
     except KeyError:
         raise Http404("No bounce destination.")
-    return redirect(settings.BASE_URL + '/' + next)
+    return redirect(settings.BASE_URL + next)
 
 @staff_member_required
 def renew_panopto_token(request):

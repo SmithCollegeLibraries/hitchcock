@@ -120,3 +120,5 @@ USE_TZ = True
 # Explicitly set upload file permissions
 # Important! https://stackoverflow.com/questions/608579/django-file-uploads-permissions/608751#608751
 FILE_UPLOAD_PERMISSIONS = 0o644
+
+LOGIN_URL = '/login/'
