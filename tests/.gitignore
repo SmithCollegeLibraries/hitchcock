@@ -1,1 +1,5 @@
 chromedriver
+venv*
+/screenshots/on_failure/*.png
+geckodriver.log
+ubuntu*.log
