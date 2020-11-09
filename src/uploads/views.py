@@ -13,12 +13,18 @@ def shib_bounce(request):
     have authenticated with Shibboleth and been bounced back to /login.
     Assumes that a 'next' argument has been set in the URL. E.g.
     '/login?next=/inventory/'.
+    
+    PersistentRemoteUserMiddleware logs the user in automatically, so there is
+    no need for this view to do this work manually.
     """
     try:
         next = request.GET['next']
     except KeyError:
         raise Http404("No bounce destination.")
-    return redirect(settings.BASE_URL + next)
+    if request.user.is_authenticated:
+        return redirect(next)
+    else:
+        return HttpResponse("Error: Not authenticated.")
 
 @staff_member_required
 def renew_panopto_token(request):
@@ -55,7 +61,8 @@ def panopto_oauth2_redirect(request):
     else:
         return HttpResponse("Authorization failed! No token found.")
 
-@permission_required('uploads.view_inventory')
+#@permission_required('uploads.view_inventory')
+@login_required
 def faculty_view_inventory(request):
     context = {
         'uploads': Upload.objects.order_by('title'),
