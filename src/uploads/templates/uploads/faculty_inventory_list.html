@@ -3,17 +3,19 @@
 {% block main_content %}
 <h2>Electronic reserves materials hosted at Smith</h2>
 
-<p>
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-</p>
-<p>
-  <a href="#">email@example.com</a><br/>
-  <a href="#">413-555-xxxx</a><br />
-</p>
+{% if query %}
+<h3>Search for &ldquo;{{ query }}&rdquo;</h3>
+<p>{{ page_obj.paginator.count }} items found</p>
+{% endif %}
 
+<form>
+  <label for="q">Search:</label>
+  <input type="text" name="q" value="{{ query|default_if_none:'' }}"></input>
+  <input type="submit"></input>
+  <a href="{{ request.path }}">clear</a>
+</form>
 
-
-<div class="table-responsive" >
+<div class="table-responsive" aria-label="Search results">
 <table border="0" cellpadding="0" cellspacing="0" class="table smith-table-style-alt">
   <thead>
     <tr>
@@ -36,7 +38,24 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
   {% endfor %}
   </tbody>
 </table>
+</div>
 
+<div class="pagination">
+    <span class="step-links">
+        {% if page_obj.has_previous %}
+            <a href="{{ request.path }}?q={{ query|default_if_none:'' }}&page=1">&laquo; first</a>
+            <a href="{{ request.path }}?q={{ query|default_if_none:'' }}&page={{ page_obj.previous_page_number }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="{{ request.path }}?q={{ query|default_if_none:'' }}&page={{ page_obj.next_page_number }}">next</a>
+            <a href="{{ request.path }}?q={{ query|default_if_none:'' }}&page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+        {% endif %}
+    </span>
 </div>
 
 {% endblock %}

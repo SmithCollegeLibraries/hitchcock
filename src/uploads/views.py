@@ -64,11 +64,22 @@ def panopto_oauth2_redirect(request):
 
 class FacultyListInventory(LoginRequiredMixin, ListView):
     model = Upload
-    paginate_by = 50
+    paginate_by = 30
     template_name = "uploads/faculty_inventory_list.html"
+
+    def get_queryset(self):
+        object_list = self.model.objects.all().order_by('title')
+        try:
+            self.query = self.request.GET['q']
+            object_list = object_list.filter(title__icontains = self.query)
+            return object_list
+        except KeyError:
+            self.query = None
+            return object_list
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['query'] = self.query
         return context
 
 def staff_view_unpublished(render_func):
