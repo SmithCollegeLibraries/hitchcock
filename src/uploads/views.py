@@ -2,8 +2,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404, HttpResponse
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.generic.list import ListView
 from .models import Video, Audio, AudioAlbum, Text, Upload
 import uuid
 from .panopto import panopto_oauth2
@@ -13,7 +14,7 @@ def shib_bounce(request):
     have authenticated with Shibboleth and been bounced back to /login.
     Assumes that a 'next' argument has been set in the URL. E.g.
     '/login?next=/inventory/'.
-    
+
     PersistentRemoteUserMiddleware logs the user in automatically, so there is
     no need for this view to do this work manually.
     """
@@ -24,7 +25,7 @@ def shib_bounce(request):
     if request.user.is_authenticated:
         return redirect(next)
     else:
-        return HttpResponse("Error: Not authenticated.")
+        return HttpResponse("Error: Shibboleth authentication failed.")
 
 @staff_member_required
 def renew_panopto_token(request):
@@ -61,13 +62,14 @@ def panopto_oauth2_redirect(request):
     else:
         return HttpResponse("Authorization failed! No token found.")
 
-#@permission_required('uploads.view_inventory')
-@login_required
-def faculty_view_inventory(request):
-    context = {
-        'uploads': Upload.objects.order_by('title'),
-    }
-    return render(request, 'uploads/faculty_view_inventory.html', context)
+class FacultyListInventory(LoginRequiredMixin, ListView):
+    model = Upload
+    paginate_by = 50
+    template_name = "uploads/faculty_inventory_list.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
 
 def staff_view_unpublished(render_func):
     """ Decorator for checking whether an item is unpublished.

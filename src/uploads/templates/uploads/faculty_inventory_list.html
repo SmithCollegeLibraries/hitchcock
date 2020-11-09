@@ -4,7 +4,7 @@
 <h2>Electronic reserves materials hosted at Smith</h2>
 
 <p>
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. 
+Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
 </p>
 <p>
   <a href="#">email@example.com</a><br/>
@@ -25,11 +25,11 @@ Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i
       </th>
       <th>
         Reference Number
-      </th>  
+      </th>
     </tr>
   </thead>
-  <tbody>    
-  {% for upload in uploads %}
+  <tbody>
+  {% for upload in object_list %}
     <tr>
       <td>{{ upload.title }}</td><td class="type">{% firstof upload.get_text_type_display upload.polymorphic_ctype|title %}</td><td>{{ upload.reference_number }}</td>
     </tr>
