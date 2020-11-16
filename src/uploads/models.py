@@ -198,6 +198,18 @@ class AudioAlbum(Upload):
         else:
             return None
 
+class SiteSetting(models.Model):
+    """A place in the database for miscellaneous settings that are configurable
+    by a staff administrator role. E.g. Text blocks that appear throughout the
+    site, API keys, or other settings.
+    """
+    setting_key = models.CharField(max_length=512)
+    setting_value = models.TextField()
+
+    def __str__(self):
+        return self.setting_key
+
+
 @receiver(models.signals.pre_save, sender=AudioAlbum)
 def set_album_directory(sender, instance, **kwargs):
     """

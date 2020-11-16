@@ -5,9 +5,12 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.list import ListView
-from .models import Video, Audio, AudioAlbum, Text, Upload
+from .models import Video, Audio, AudioAlbum, Text, Upload, SiteSetting
 import uuid
 from .panopto import panopto_oauth2
+from html_sanitizer import Sanitizer
+html_sanitizer = Sanitizer()
+html = html_sanitizer.sanitize
 
 def shib_bounce(request):
     """This view is for bouncing the user to the desired location after they
@@ -62,6 +65,13 @@ def panopto_oauth2_redirect(request):
     else:
         return HttpResponse("Authorization failed! No token found.")
 
+def get_site_setting(setting_key):
+    try:
+        obj = SiteSetting.objects.get(setting_key__exact=setting_key)
+        return obj.setting_value
+    except SiteSetting.DoesNotExist:
+        return None
+
 class FacultyListInventory(LoginRequiredMixin, ListView):
     model = Upload
     paginate_by = 30
@@ -79,6 +89,8 @@ class FacultyListInventory(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['title'] = html(get_site_setting('faculty_inventory_page_title'))
+        context['top_text_content'] = html(get_site_setting('faculty_inventory_text_block'))
         context['query'] = self.query
         return context
 
