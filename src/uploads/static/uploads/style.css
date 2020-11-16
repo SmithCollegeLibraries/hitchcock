@@ -18,8 +18,24 @@
 @media screen and (max-width: 991px) {
   .error-page .cta-button-col {
     text-align: center;
-  }  
+  }
   .main-container {
     margin: auto 1em;
   }
+}
+
+/* Faculty inventory listing view */
+table a {
+  color: #333;
+}
+table td.type {
+  white-space: nowrap;
+}
+div.pagination {
+  display: block;
+  margin-bottom: 2em;
+  font-size: 16px;
+}
+#main a {
+  text-decoration: underline;
 }

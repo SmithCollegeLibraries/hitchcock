@@ -45,11 +45,11 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.auth.middleware.RemoteUserMiddleware',
+    'django.contrib.auth.middleware.PersistentRemoteUserMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.RemoteUserBackend',
+    'django.contrib.auth.backends.AllowAllUsersRemoteUserBackend',
     'django.contrib.auth.backends.ModelBackend', # fallback when Shib isn't available
 ]
 
@@ -120,3 +120,5 @@ USE_TZ = True
 # Explicitly set upload file permissions
 # Important! https://stackoverflow.com/questions/608579/django-file-uploads-permissions/608751#608751
 FILE_UPLOAD_PERMISSIONS = 0o644
+
+LOGIN_URL = '/login/'

@@ -2,24 +2,32 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import Http404, HttpResponse
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
-from .models import Video, Audio, AudioAlbum, Text
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.admin.views.decorators import staff_member_required
+from django.views.generic.list import ListView
+from .models import Video, Audio, AudioAlbum, Text, Upload
 import uuid
 from .panopto import panopto_oauth2
-from django.contrib.auth.decorators import login_required
 
 def shib_bounce(request):
     """This view is for bouncing the user to the desired location after they
     have authenticated with Shibboleth and been bounced back to /login.
     Assumes that a 'next' argument has been set in the URL. E.g.
     '/login?next=/inventory/'.
+
+    PersistentRemoteUserMiddleware logs the user in automatically, so there is
+    no need for this view to do this work manually.
     """
     try:
         next = request.GET['next']
     except KeyError:
         raise Http404("No bounce destination.")
-    return redirect(settings.BASE_URL + '/' + next)
+    if request.user.is_authenticated:
+        return redirect(next)
+    else:
+        return HttpResponse("Error: Shibboleth authentication failed.")
 
-@login_required
+@staff_member_required
 def renew_panopto_token(request):
     oauth2 = panopto_oauth2.PanoptoOAuth2(
         settings.PANOPTO_SERVER,
@@ -40,7 +48,7 @@ def renew_panopto_token(request):
     request.session['oath_state'] = oauth_state
     return redirect(result)
 
-@login_required
+@staff_member_required
 def panopto_oauth2_redirect(request):
     oauth2 = panopto_oauth2.PanoptoOAuth2(
         settings.PANOPTO_SERVER,
@@ -53,6 +61,26 @@ def panopto_oauth2_redirect(request):
         return HttpResponse("<p>Authorization complete! <pre>%s</pre></p> <p>New refresh token saved to <pre>%s</pre></p>" % (token, settings.PANOPTO_AUTH_CACHE_FILE_PATH))
     else:
         return HttpResponse("Authorization failed! No token found.")
+
+class FacultyListInventory(LoginRequiredMixin, ListView):
+    model = Upload
+    paginate_by = 30
+    template_name = "uploads/faculty_inventory_list.html"
+
+    def get_queryset(self):
+        object_list = self.model.objects.all().order_by('title')
+        try:
+            self.query = self.request.GET['q']
+            object_list = object_list.filter(title__icontains = self.query)
+            return object_list
+        except KeyError:
+            self.query = None
+            return object_list
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['query'] = self.query
+        return context
 
 def staff_view_unpublished(render_func):
     """ Decorator for checking whether an item is unpublished.
