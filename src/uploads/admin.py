@@ -3,11 +3,12 @@ from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModel
 from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicInline
 from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline, SortableStackedInline
 from django.utils.safestring import mark_safe
-from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text, VideoVttTrack
+from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text, VideoVttTrack, SiteSetting
 from django.utils.html import format_html
 from . import tasks
 from django import forms
 import copy
+from django.utils.html import strip_tags
 
 def queue_for_processing(modeladmin, request, queryset):
     for item in queryset.all():
@@ -93,7 +94,7 @@ class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
                     'processing_status',
                     'queued_for_processing',
                 ]
-        
+
         fieldsets = (
             (None, {
                 'fields': (
@@ -116,7 +117,7 @@ class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
             }),
         )
         return fieldsets
-    
+
     def get_readonly_fields(self, request, obj=None):
         """Allow editing panopto_session_id when creating. But once it is set,
         by uploading a panopto session don't allow it to be edited after that.
@@ -207,3 +208,13 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
         if obj is not None:
             if obj.ereserves_record_url is not None:
                 return mark_safe("<a href='%s'>record</a>" % obj.ereserves_record_url)
+
+@admin.register(SiteSetting)
+class SiteSettingAdmin(admin.ModelAdmin):
+    def value(self, obj):
+        if len(obj.setting_value) > 128:
+            return strip_tags(obj.setting_value)[:128] + '...'
+        else:
+            return obj.setting_value
+
+    list_display = ( 'setting_key', 'value' )

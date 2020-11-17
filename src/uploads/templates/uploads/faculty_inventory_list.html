@@ -1,7 +1,11 @@
 {% extends "base.html" %}
-{% block title %}E-Reserves Hosted at Smith | Smith College Libraries{% endblock %}
+{% block title %}{{ title }} | Smith College Libraries{% endblock %}
 {% block main_content %}
-<h2>Electronic reserves materials hosted at Smith</h2>
+<h2>{{ title|safe }}</h2>
+
+<div class="text-block">
+{{ top_text_content|safe }}
+</div>
 
 {% if query %}
 <h3>Search for &ldquo;{{ query }}&rdquo;</h3>

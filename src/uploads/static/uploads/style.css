@@ -39,3 +39,6 @@ div.pagination {
 #main a {
   text-decoration: underline;
 }
+.text-block {
+  margin-bottom: 3em;
+}
