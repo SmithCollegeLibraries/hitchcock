@@ -3,8 +3,20 @@
 ## [Unreleased]
 - Temporarily remove VTT support for Videos, until it is supported by Panopto upload API integration
 
+## [1.4.0] - 2020-11-17
+Inventory view for faculty
+
+### Added
+- Add Shibboleth support
+- Add view of materials in system at /inventory for faculty to see what's already digitized
+- Add site settings system for staff administrators to edit settings, such as content at top of faculty view
+
+### Fixed
+- Make search case insensitive
+
 ## [1.3.1] - 2020-10-20
 Bug-fix release.
+
 ### Fixed
 - Fix internal server error when a user requests a video that has no Panopto session id. Displays user friendly 404 page now.
 - Fix internal server error on large file upload. Maximum theoretical file size increased from 2147483647 bytes to 9223372036854775807 bytes.
