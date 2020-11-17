@@ -89,8 +89,17 @@ class FacultyListInventory(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = html(get_site_setting('faculty_inventory_page_title'))
-        context['top_text_content'] = html(get_site_setting('faculty_inventory_text_block'))
+        title_text = get_site_setting('faculty_inventory_page_title')
+        if title_text is not None:
+            context['title'] = html(title_text)
+        else:
+            context['title'] = ''
+        top_text = get_site_setting('faculty_inventory_text_block')
+        if top_text is not None:
+            context['top_text_content'] = html(top_text)
+        else:
+            context['top_text_content'] = ''
+
         context['query'] = self.query
         return context
 

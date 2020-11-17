@@ -13,7 +13,7 @@
 {% endif %}
 
 <form>
-  <label for="q">Search:</label>
+  <label for="q">Title Search:</label>
   <input type="text" name="q" value="{{ query|default_if_none:'' }}"></input>
   <input type="submit"></input>
   <a href="{{ request.path }}">clear</a>
@@ -24,7 +24,7 @@
   <thead>
     <tr>
       <th>
-        Name
+        Title
       </th>
       <th>
         Type
