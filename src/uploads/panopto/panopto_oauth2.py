@@ -11,6 +11,9 @@ from http.server import BaseHTTPRequestHandler
 from socketserver import ThreadingTCPServer
 from django.conf import settings
 
+class RefreshAccessTokenFailed(Exception):
+    pass
+
 # This code uses this local URL as redirect target for Authorization Code Grant (Server-side Web Application)
 REDIRECT_URL = settings.BASE_URL + '/panopto-auth2-redirect'
 REDIRECT_PORT = 9127
@@ -23,7 +26,7 @@ class PanoptoOAuth2():
         self.client_id = client_id
         self.client_secret = client_secret
         self.ssl_verify = ssl_verify
-        
+
         # Create URI from
         self.authorization_endpoint = 'https://{0}/Panopto/oauth2/connect/authorize'.format(server)
         self.access_token_endpoint = 'https://{0}/Panopto/oauth2/connect/token'.format(server)
@@ -38,9 +41,9 @@ class PanoptoOAuth2():
     def get_access_token_authorization_code_grant(self):
         '''
         Get OAuth2 access token by Authorization Code Grant (Server-side Web Application).
-        
+
         This method initially tries to get a new access token from refresh token.
-        
+
         If refresh token is not available or does not work, proceed to new authorization flow:
          1. To launch the browser to navigate authorization URL.
          2. To start temporary HTTP server at localhost:REDIRECT_PORT and block.
@@ -48,21 +51,22 @@ class PanoptoOAuth2():
          4. To get access token and refresh token with given authentication code by redirection.
          5. Save the token object, which includes refersh_token, for later refrehsh operation.
         '''
-        
+
         # First, try getting a new access token from refesh token.
         access_token = self.__get_refreshed_access_token()
         if access_token:
             return access_token
         else:
-            access_token = self.get_new_token()
-            return access_token
+            raise RefreshAccessTokenFailed("You need to set up the refresh token. Go to %s/admin/renew-panopto-token to set it up. More details in README.md." % settings.BASE_URL)
+#            access_token = self.get_new_token()
+#            return access_token
 
     def get_new_token(self):
         # Then, fallback to the full autorization path. Offline access scope is needed to get refresh token.
         scope = list(DEFAULT_SCOPE) + ['offline_access']
         session = OAuth2Session(self.client_id, scope = scope, redirect_uri = REDIRECT_URL)
         session.verify = self.ssl_verify
-        
+
         # Open the authorization page by the browser.
         authorization_url, state = session.authorization_url(self.authorization_endpoint)
         print()
@@ -92,7 +96,7 @@ class PanoptoOAuth2():
         scope = list(DEFAULT_SCOPE) + ['offline_access']
         session = OAuth2Session(self.client_id, scope = scope, redirect_uri = REDIRECT_URL)
         session.verify = self.ssl_verify
-        
+
         # Open the authorization page by the browser.
         authorization_url, state = session.authorization_url(self.authorization_endpoint)
         print()
