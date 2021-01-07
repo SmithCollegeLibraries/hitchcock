@@ -178,9 +178,11 @@ class Audio(Upload):
         upload_to=settings.AV_SUBDIR_NAME + 'audio/',
         max_length=1024,
         validators=[validate_audio,],
-        help_text="mp3 format only")
+        help_text="mp3 or wav format only")
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
+    lock_panopto_session_id = models.BooleanField(default=False)
+
 
     @property
     def url(self):

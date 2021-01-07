@@ -65,13 +65,31 @@ class VideoAdminForm(forms.ModelForm):
         model = Video
         fields = "__all__"
 
-@admin.register(Video)
-class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
-    form = VideoAdminForm
-    base_model = Video  # Explicitly set here!
-#    show_in_index = True  # makes child model admin visible in main admin site
+class AudioAdminForm(forms.ModelForm):
+    upload_to_panopto = forms.BooleanField(required=False)
+
+    def save(self, commit=True):
+        upload_to_panopto = self.cleaned_data.get('upload_to_panopto', None)
+
+        # Get the form instance so I can write to its fields
+        instance = super(AudioAdminForm, self).save(commit=commit)
+
+        if upload_to_panopto is True:
+            tasks.upload_to_panopto(str(instance.id))
+            instance.queued_for_processing = True
+            instance.processing_status = "Added to queue, waiting for file to be uploaded to Panopto"
+
+        if commit:
+            instance.save()
+
+        return instance
+
+    class Meta:
+        model = Audio
+        fields = "__all__"
+
+class PanoptoUploadAdmin(NonSortableParentAdmin, UploadChildAdmin):
     readonly_fields = ['size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing']
-#    inlines = [VideoVttTrackInline,]
     def get_fieldsets(self, request, obj=None):
         if obj is None:
             panopto_fields = [
@@ -135,11 +153,19 @@ class VideoAdmin(NonSortableParentAdmin, UploadChildAdmin):
         else:
             return readonly_fields_sans_panopto_session_id
 
+@admin.register(Video)
+class VideoAdmin(PanoptoUploadAdmin):
+    form = VideoAdminForm
+    base_model = Video  # Explicitly set here!
+#    show_in_index = True  # makes child model admin visible in main admin site
+#    inlines = [VideoVttTrackInline,]
+
 @admin.register(Audio)
-class AudioAdmin(UploadChildAdmin):
+class AudioAdmin(PanoptoUploadAdmin):
+    form = AudioAdminForm
     base_model = Audio  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
+    # readonly_fields = ('size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
 
 class AudioAlubmInline(SortableTabularInline):
     model = AudioTrack
@@ -190,7 +216,7 @@ class MissingEReservesRecordFilter(admin.SimpleListFilter):
 class UploadParentAdmin(PolymorphicParentModelAdmin):
     """ The parent model admin """
     base_model = Upload  # Optional, explicitly set here.
-    child_models = (Text, Video)
+    child_models = (Text, Video, Audio)
     list_filter = (
         PolymorphicChildModelFilter,
         MissingEReservesRecordFilter,
