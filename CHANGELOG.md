@@ -1,7 +1,13 @@
 # Hitchcock Releases
 
-## [Unreleased]
-- Temporarily remove VTT support for Videos, until it is supported by Panopto upload API integration
+## [1.4.0] - 2020-01-12
+Add audio, fix bad error messages when refresh token expires
+
+### Added
+- Add Audio upload type, which uploads to Panopto
+
+### Fixed
+- Remove code that attempts to accept oauth2 token hand off, instead print better error message that token needs to be updated manually
 
 ## [1.4.0] - 2020-11-17
 Inventory view for faculty
