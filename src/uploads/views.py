@@ -161,10 +161,17 @@ def play_audio(request, pk):
 
     @staff_view_unpublished
     def render_audio(request, obj):
-        context = {
-            'panopto_session_id': obj.panopto_session_id,
-        }
-        return render(request, 'uploads/video-panopto-embed.html', context)
+        panopto_session_id = obj.panopto_session_id
+        if panopto_session_id is not None:
+            panopto_url = 'https://' + settings.PANOPTO_SERVER + '/Panopto/Pages/Viewer.aspx?id=' + panopto_session_id
+        else:
+            raise Http404("No audio found")
+
+        return redirect(panopto_url)
+        # context = {
+        #     'panopto_session_id': obj.panopto_session_id,
+        # }
+        # return render(request, 'uploads/video-panopto-embed.html', context)
     return render_audio(request, obj)
 
 def play_audio_album(request, pk):
