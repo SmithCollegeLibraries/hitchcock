@@ -1,6 +1,6 @@
 # Hitchcock Releases
 
-## [1.4.0] - 2020-01-12
+## [1.5.0] - 2020-01-12
 Add audio, fix bad error messages when refresh token expires
 
 ### Added
