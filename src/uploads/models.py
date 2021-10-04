@@ -71,9 +71,9 @@ def text_upload_path(instance, filename):
         'article': 'articles/',
         'book_excerpt': 'books-excerpt/',
         'book_whole': 'books-whole/',
-        'other': 'other',
+        'other': 'other/',
     }
-    # Reimpliment filename sanitization, and collision avoidance
+    # Reimplement filename sanitization, and collision avoidance
     storage = instance.upload.storage
     valid_filename = storage.get_valid_name(filename)
     proposed_path = settings.TEXT_SUBDIR_NAME + lookup[instance.text_type] + valid_filename
