@@ -10,6 +10,18 @@ from django import forms
 import copy
 from django.utils.html import strip_tags
 
+
+def bytes_to_mb(byte_number):
+    # If 10 MB or more, display as whole number
+    if byte_number >= 10**7:
+        return byte_number // (10**6)
+    # If it's between 0.1 MB and 10 MB, display with one decimal place
+    elif byte_number >= 10**5:
+        return (byte_number // (10**5)) / 10
+    # If it's less than 0.1 MB, display up to four decimal places...
+    else:
+        return (byte_number / (10**6))
+
 def queue_for_processing(modeladmin, request, queryset):
     for item in queryset.all():
         tasks.upload_to_panopto(str(item.id))
@@ -22,10 +34,13 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
     base_model = Upload  # Optional, explicitly set here.
     search_fields = ['title', 'barcode', 'ereserves_record_url']
-    list_display = ( 'title', 'barcode', 'created', 'modified', 'size', 'published')
+    list_display = ( 'title', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
     ordering = ('-modified',)
     list_filter = ('published',)
     actions = [queue_for_processing,]
+    def size_in_mb(self, obj):
+        return bytes_to_mb(obj.size)
+    size_in_mb.admin_order_field = 'size'
 
     class Media:
         js = ('uploads/js/uploads-admin.js',)
@@ -89,7 +104,7 @@ class AudioAdminForm(forms.ModelForm):
         fields = "__all__"
 
 class PanoptoUploadAdmin(NonSortableParentAdmin, UploadChildAdmin):
-    readonly_fields = ['size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing']
+    readonly_fields = ['size_in_mb', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing']
     def get_fieldsets(self, request, obj=None):
         if obj is None:
             panopto_fields = [
@@ -123,7 +138,7 @@ class PanoptoUploadAdmin(NonSortableParentAdmin, UploadChildAdmin):
                     'notes',
                     'published',
                     'upload',
-                    'size',
+                    'size_in_mb',
                     'created',
                     'modified',
                     'identifier',
@@ -157,33 +172,33 @@ class PanoptoUploadAdmin(NonSortableParentAdmin, UploadChildAdmin):
 class VideoAdmin(PanoptoUploadAdmin):
     form = VideoAdminForm
     base_model = Video  # Explicitly set here!
-#    show_in_index = True  # makes child model admin visible in main admin site
-#    inlines = [VideoVttTrackInline,]
+    # show_in_index = True  # makes child model admin visible in main admin site
+    # inlines = [VideoVttTrackInline,]
 
 @admin.register(Audio)
 class AudioAdmin(PanoptoUploadAdmin):
     form = AudioAdminForm
     base_model = Audio  # Explicitly set here!
-#    show_in_index = True  # makes child model admin visible in main admin site
-    # readonly_fields = ('size', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
+    # show_in_index = True  # makes child model admin visible in main admin site
+    # readonly_fields = ('size_in_mb', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
 
-class AudioAlubmInline(SortableTabularInline):
+class AudioAlbumInline(SortableTabularInline):
     model = AudioTrack
     extra = 1
 
 @admin.register(AudioAlbum)
 class AudioAlbumAdmin(NonSortableParentAdmin, UploadChildAdmin):
     base_model = AudioAlbum  # Explicitly set here!
-#    show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size', 'created', 'modified', 'album_directory', 'identifier', 'url', 'queued_for_processing')
-    inlines = [AudioAlubmInline,]
+    # show_in_index = True  # makes child model admin visible in main admin site
+    readonly_fields = ('size_in_mb', 'created', 'modified', 'album_directory', 'identifier', 'url', 'queued_for_processing')
+    inlines = [AudioAlbumInline,]
 
 @admin.register(Text)
 class TextAdmin(UploadChildAdmin):
     base_model = Text  # Explicitly set here!
 #    show_in_index = True  # makes child model admin visible in main admin site
-    list_display = ( 'title', 'text_type', 'barcode', 'created', 'modified', 'size', 'published')
-    readonly_fields = ('size', 'created', 'modified', 'url', 'text_type', 'identifier', 'queued_for_processing')
+    list_display = ( 'title', 'text_type', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
+    readonly_fields = ('size_in_mb', 'created', 'modified', 'url', 'text_type', 'identifier', 'queued_for_processing')
     list_filter = ('published', 'text_type')
     def get_readonly_fields(self, request, obj=None):
         """If obj is None that means the object is being created. In this case
@@ -193,9 +208,9 @@ class TextAdmin(UploadChildAdmin):
         after creation.
         """
         if obj is None:
-            return ['size', 'created', 'modified', 'identifier', 'url', 'queued_for_processing']
+            return ['size_in_mb', 'created', 'modified', 'identifier', 'url', 'queued_for_processing']
         else:
-            return ['size', 'created', 'modified', 'text_type', 'identifier', 'url', 'queued_for_processing']
+            return ['size_in_mb', 'created', 'modified', 'text_type', 'identifier', 'url', 'queued_for_processing']
 
 class MissingEReservesRecordFilter(admin.SimpleListFilter):
     title = "empty e-reserves url"
@@ -222,10 +237,13 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
         MissingEReservesRecordFilter,
         'published',
     )
-    list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size', 'published', 'ereserves_record')
+    list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size_in_mb', 'published', 'ereserves_record')
     search_fields = ['title', 'barcode', 'ereserves_record_url', 'identifier']
     ordering = ('-modified',)
     actions = [queue_for_processing,]
+    def size_in_mb(self, obj):
+        return bytes_to_mb(obj.size)
+    size_in_mb.admin_order_field = 'size'
 
     def type(self, obj):
         return obj.polymorphic_ctype
