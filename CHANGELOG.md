@@ -1,7 +1,15 @@
 # Hitchcock Releases
 
+## Unreleased
+
+### Improved
+- Changed display of upload size to MB instead of bytes
+
+### Fixed
+- Upload location for text uploads of "other files"
+
 ## [1.5.0] - 2021-01-12
-Add audio, fix bad error messages when refresh token expires
+- Add audio, fix bad error messages when refresh token expires
 
 ### Added
 - Add Audio upload type, which uploads to Panopto
@@ -10,7 +18,7 @@ Add audio, fix bad error messages when refresh token expires
 - Remove code that attempts to accept oauth2 token hand off, instead print better error message that token needs to be updated manually
 
 ## [1.4.0] - 2020-11-17
-Inventory view for faculty
+- Inventory view for faculty
 
 ### Added
 - Add Shibboleth support
@@ -46,7 +54,7 @@ Database backups and configuration files restructure.
 ### Changed
 - Revise settings configuration files structure to be compatible with django-dbbackup
 
-## [1.1.0] - 2020-03-03
+## [1.1.0] - 2020-09-03
 Several usability enhancements.
 
 ### Added
