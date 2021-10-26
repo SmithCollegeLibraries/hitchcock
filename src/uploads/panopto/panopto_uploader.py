@@ -22,7 +22,7 @@ MANIFEST_FILE_NAME = settings.PANOPTO_UPLOAD_MANIFEST_TEMPLATES + 'upload_manife
 class PanoptoUploader:
     def __init__(self, server, ssl_verify, oauth2):
         '''
-        Constructor of uploader instance. 
+        Constructor of uploader instance.
         This goes through authorization step of the target server.
         '''
         self.server = server
@@ -50,8 +50,8 @@ class PanoptoUploader:
 
     def __inspect_response_is_retry_needed(self, response):
         '''
-        Inspect the response of a requets' call.
-        True indicates the retry needed, False indicates success. Othrwise an exception is thrown.
+        Inspect the response of a request's call.
+        True indicates the retry needed, False indicates success. Otherwise an exception is thrown.
         Reference: https://stackoverflow.com/a/24519419
 
         This method detects 403 (Forbidden), refresh the access token, and returns as 'is retry needed'.
@@ -61,7 +61,7 @@ class PanoptoUploader:
         if response.status_code // 100 == 2:
             # Success on 2xx response.
             return False
-            
+
         if response.status_code == requests.codes.forbidden:
             print('Forbidden. This may mean token expired. Refresh access token.')
             self.__setup_or_refresh_access_token()
@@ -81,14 +81,14 @@ class PanoptoUploader:
 
         # step 2 - upload the video file
         self.__multipart_upload_single_file(upload_target, file_path)
-        
+
         # step 3 - create manifest file and uplaod it
         self.__create_manifest_for_video(file_path, MANIFEST_FILE_NAME)
         self.__multipart_upload_single_file(upload_target, MANIFEST_FILE_NAME)
-        
+
         # step 4 - finish the upload
         self.__finish_upload(session_upload)
-        
+
         # step 5 - monitor the progress of processing and get session id
         session_id = self.__monitor_progress(upload_id)
         return session_id
@@ -131,7 +131,7 @@ class PanoptoUploader:
         print('  endpoint URL: {0}'.format(service_endpoint))
         print('  bucket name : {0}'.format(bucket))
         print('  object key  : {0}'.format(object_key))
-        
+
         # Create S3 client with custom endpoint on Panopto server.
         # Panopto server does not refer access key or secret, but the library needs
         # some values to start, otherwise no credentials error is thrown.
@@ -141,11 +141,11 @@ class PanoptoUploader:
             verify = self.ssl_verify,
             aws_access_key_id='dummy',
             aws_secret_access_key = 'dummy')
-        
+
         # Initiate multipart upload.
         mpu = s3.create_multipart_upload(Bucket = bucket, Key = object_key)
         mpu_id = mpu['UploadId']
-        
+
         # Iterate through parts
         parts = []
         uploaded_bytes = 0
@@ -161,7 +161,7 @@ class PanoptoUploader:
                 uploaded_bytes += len(data)
                 print('  -- {0} of {1} bytes uploaded'.format(uploaded_bytes, total_bytes))
                 i += 1
-        
+
         # Copmlete
         result = s3.complete_multipart_upload(Bucket = bucket, Key = object_key, UploadId = mpu_id, MultipartUpload = {"Parts": parts})
         print('  -- complete called.')
@@ -174,7 +174,7 @@ class PanoptoUploader:
         print('Writing manifest file: {0}'.format(manifest_file_name))
 
         file_name = os.path.basename(file_path)
-        
+
         with open(MANIFEST_FILE_TEMPLATE) as fr:
             template = fr.read()
         content = template\
@@ -184,7 +184,7 @@ class PanoptoUploader:
         .replace('{Date}', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f-00:00'))
         with codecs.open(manifest_file_name, 'w', 'utf-8') as fw:
             fw.write(content)
-        
+
     def __finish_upload(self, session_upload):
         '''
         Finish upload.
