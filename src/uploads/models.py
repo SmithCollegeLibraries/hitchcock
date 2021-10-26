@@ -133,16 +133,16 @@ class VideoVttTrack(SortableMixin):
         ordering = ['vtt_order']
 
     TEXT_TRACK_TYPES = [
-        ('captions', 'Captions (for hearing impairment)'),
+        ('captions', 'Captions (for Deaf and hard-of-hearing users)'),
         ('subtitles', 'Subtitles (for language translations)'),
-        ('descriptions', 'Descriptions (for vision impairment)'),
+        ('descriptions', 'Audio descriptions (for users with vision impairment)'),
         # ('chapters', 'Chapters'),
         # ('metadata', 'Metadata (for machines, not humans)'),
     ]
     upload = models.FileField(
         upload_to=settings.TEXT_SUBDIR_NAME + settings.VTT_SUBDIR_NAME,
         max_length=1024,
-#        validators=[validate_audio,],
+        # validators=[validate_audio,],
         help_text="vtt format only")
     type = models.CharField(max_length=16, choices=TEXT_TRACK_TYPES)
     language = models.CharField(
