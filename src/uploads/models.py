@@ -60,6 +60,8 @@ class Upload(PolymorphicModel):
         permissions = [
             ("view_inventory", "Can view non-staff inventory of materials (for faculty)"),
         ]
+        verbose_name = 'upload'
+        verbose_name_plural = 'all uploads'
 
 ### Text i.e. pdf ###
 def text_upload_path(instance, filename):
@@ -109,6 +111,9 @@ class Text(Upload):
         else:
             return None
 
+    class Meta:
+        verbose_name = 'Text upload'
+
 ### Video i.e. mp4 ###
 class Video(Upload):
     upload = models.FileField(
@@ -120,7 +125,6 @@ class Video(Upload):
     lock_panopto_session_id = models.BooleanField(default=False)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
 
-
     @property
     def url(self):
         if self.created is not None:
@@ -128,13 +132,17 @@ class Video(Upload):
         else:
             return None
 
+    class Meta:
+        verbose_name = 'Video upload'
+
+### Subtitle or caption file i.e. vtt ###
 class VideoVttTrack(SortableMixin):
     class Meta:
         ordering = ['vtt_order']
 
     TEXT_TRACK_TYPES = [
-        ('captions', 'Captions (for Deaf and hard-of-hearing users)'),
         ('subtitles', 'Subtitles (for language translations)'),
+        ('captions', 'Captions (for Deaf and hard-of-hearing users)'),
         ('descriptions', 'Descriptions (for vision impairment)'),
         # ('chapters', 'Chapters'),
         # ('metadata', 'Metadata (for machines, not humans)'),
@@ -183,13 +191,15 @@ class Audio(Upload):
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
 
-
     @property
     def url(self):
         if self.created is not None:
             return settings.BASE_URL + "/audio/%s" % self.id
         else:
             return None
+
+    class Meta:
+        verbose_name = 'audio upload'
 
 class AudioAlbum(Upload):
     album_directory = models.CharField(max_length=512, blank=True, null=True)
