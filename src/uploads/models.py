@@ -140,7 +140,7 @@ class VideoVttTrack(SortableMixin):
         # ('metadata', 'Metadata (for machines, not humans)'),
     ]
     upload = models.FileField(
-        upload_to=settings.TEXT_SUBDIR_NAME + settings.VTT_SUBDIR_NAME,
+        upload_to=settings.AV_SUBDIR_NAME + settings.VTT_SUBDIR_NAME,
         max_length=1024,
         # validators=[validate_audio,],
         help_text="vtt format only")
