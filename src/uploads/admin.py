@@ -39,7 +39,10 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     list_filter = ('published',)
     actions = [queue_for_processing,]
     def size_in_mb(self, obj):
-        return bytes_to_mb(obj.size)
+        if not obj or not obj.size:
+            return None
+        else:
+            return bytes_to_mb(obj.size)
     size_in_mb.admin_order_field = 'size'
 
     class Media:
@@ -242,7 +245,10 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
     ordering = ('-modified',)
     actions = [queue_for_processing,]
     def size_in_mb(self, obj):
-        return bytes_to_mb(obj.size)
+        if not obj or not obj.size:
+            return None
+        else:
+            return bytes_to_mb(obj.size)
     size_in_mb.admin_order_field = 'size'
 
     def type(self, obj):
