@@ -135,7 +135,7 @@ class VideoVttTrack(SortableMixin):
     TEXT_TRACK_TYPES = [
         ('captions', 'Captions (for Deaf and hard-of-hearing users)'),
         ('subtitles', 'Subtitles (for language translations)'),
-        ('descriptions', 'Audio descriptions (for users with vision impairment)'),
+        ('descriptions', 'Descriptions (for vision impairment)'),
         # ('chapters', 'Chapters'),
         # ('metadata', 'Metadata (for machines, not humans)'),
     ]
