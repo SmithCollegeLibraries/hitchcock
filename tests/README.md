@@ -12,7 +12,8 @@ To run behavioral regression tests:
 ``` bash
 # in hitchcock/tests/
 python3 -m venv venv
-pip install -r requirements.text
+source venv/bin/activate
+pip install -r requirements.txt
 # Download Chrome web driver and put it in your path
 # https://chromedriver.chromium.org/downloads
 behave -D password=CHANGEME

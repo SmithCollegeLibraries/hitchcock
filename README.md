@@ -68,7 +68,7 @@ To do this log in as a super user in Hitchcock and point your web browser to [HI
 Hence forth the API authentication should be set up and should require possibly only a very occasional retrial of the above steps.
 
 ### Background tasks
-In order to outlast the temporary duration of a web request, Hitchcock backgrounds the process of uploading to and waiting for Panopto to transcode the files. Hitchcock uses the Django app called django-background-tasks to create a queue of upload tasks. In order for the tasks to be processed the 'process-tasks' manage.py command must be running. On a local environment this can be triggered by using the command `python manage.py process-tasks`. But on a live system this should be setup as a cron job matched to the command's expiration setting. (https://django-background-tasks.readthedocs.io/en/latest/#running-tasks)
+In order to outlast the temporary duration of a web request, Hitchcock backgrounds the process of uploading to and waiting for Panopto to transcode the files. Hitchcock uses the Django app called django-background-tasks to create a queue of upload tasks. In order for the tasks to be processed the 'process_tasks' manage.py command must be running. On a local environment this can be triggered by using the command `python manage.py process_tasks`. But on a live system this should be setup as a cron job matched to the command's expiration setting. (https://django-background-tasks.readthedocs.io/en/latest/#running-tasks)
 
 ### Fulfilling requests
 When a Hitchcock video URL is requested the system looks up the Panopto session id and redirects the user's browser to the Panopto session player page.
