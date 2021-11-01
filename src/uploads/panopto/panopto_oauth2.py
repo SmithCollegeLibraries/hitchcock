@@ -32,7 +32,7 @@ class PanoptoOAuth2():
         self.access_token_endpoint = 'https://{0}/Panopto/oauth2/connect/token'.format(server)
 
         # Create cache file name to store the refresh token. Use server & client ID combination.
-        self.cache_file = cache_path + '/token_{0}_{1}.cache'.format(server, client_id)
+        self.cache_file = '/' + cache_path.strip('/') + '/token_{0}_{1}.cache'.format(server, client_id)
 
         # Make oauthlib library accept non-HTTPS redirection.
         # This should not be applied if the redirect is hosted by actual server (not localhost).
@@ -49,7 +49,7 @@ class PanoptoOAuth2():
          2. To start temporary HTTP server at localhost:REDIRECT_PORT and block.
          3. When the redirect is received, HTTP server exits.
          4. To get access token and refresh token with given authentication code by redirection.
-         5. Save the token object, which includes refersh_token, for later refrehsh operation.
+         5. Save the token object, which includes refresh_token, for later refresh operation.
         '''
 
         # First, try getting a new access token from refesh token.
@@ -62,7 +62,7 @@ class PanoptoOAuth2():
 #            return access_token
 
     def get_new_token(self):
-        # Then, fallback to the full autorization path. Offline access scope is needed to get refresh token.
+        # Then, fallback to the full authorization path. Offline access scope is needed to get refresh token.
         scope = list(DEFAULT_SCOPE) + ['offline_access']
         session = OAuth2Session(self.client_id, scope = scope, redirect_uri = REDIRECT_URL)
         session.verify = self.ssl_verify
@@ -119,7 +119,7 @@ class PanoptoOAuth2():
         '''
         Private method of the class.
         Get a new access token from refresh token.
-        Save the updated token object, which includes refersh_token, for later refrehsh operation.
+        Save the updated token object, which includes refresh_token, for later refresh operation.
         Returning None if failing to get the new access token with any reason.
         '''
         try:
@@ -128,7 +128,7 @@ class PanoptoOAuth2():
             with open(self.cache_file, 'r') as fr:
                 token = json.load(fr)
 
-            session = OAuth2Session(self.client_id, token = token)
+            session = OAuth2Session(self.client_id, token=token)
             session.verify = self.ssl_verify
 
             print()
@@ -150,6 +150,7 @@ class PanoptoOAuth2():
         Private method of the class.
         Save entire token object from oauthlib (not just refresh token).
         '''
+        os.remove(self.cache_file)
         with open(self.cache_file, 'w') as fw:
             json.dump(token, fw)
         print('OAuth2 flow provided the token below. Cache it to {0}'.format(self.cache_file))
