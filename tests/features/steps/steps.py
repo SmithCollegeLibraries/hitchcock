@@ -59,8 +59,8 @@ def setp_imp(context, object_type):
     # Go to add upload page
     driver.get(base_url + '/admin/uploads/upload/add/')
     assert "Add upload" in driver.title, "Upload add page title is wrong"
-    radio_item = driver.find_element_by_xpath(\
-    "//*[contains(text(),'%s')]" % object_type)
+    radio_item = driver.find_element_by_xpath(
+            "//*[contains(text(),'%s')]/input" % object_type)
     radio_item.click()
     radio_item.submit()
     # Fill out the form and submit it
@@ -108,7 +108,7 @@ def step_imp(context):
 
     url_element = driver.get_element('#hitchcock-url')
     assert is_valid_url(url_element.text)
-    
+
 @when('I go to the current "{object_type}" object view URL')
 def step_imp(context, object_type):
     driver = context.behave_driver
@@ -170,7 +170,7 @@ def step_imp(context):
 def step_imp(context, object_type, published_state):
     driver = context.behave_driver
     driver.get(context.edit_urls[object_type])
-    
+
     target_state = None
 
     if published_state == "published":

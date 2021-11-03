@@ -1,15 +1,20 @@
 # Hitchcock Releases
 
-## Unreleased
+## [1.6.0] - 2021-11-03
+Version to allow import from older Panopto sessions
 
-### Improved
+### New functions
+- Added script which allows us to add previously uploaded Panopto sessions to Hitchcock
+
+### Improvements
 - Changed display of upload size to MB instead of bytes
 
-### Fixed
-- Upload location for text uploads of "other files"
+### Fixes
+- Corrected upload location for text uploads of "other files"
+- Fixed typos
 
 ## [1.5.0] - 2021-01-12
-- Add audio, fix bad error messages when refresh token expires
+Add audio, fix bad error messages when refresh token expires
 
 ### Added
 - Add Audio upload type, which uploads to Panopto
@@ -18,7 +23,7 @@
 - Remove code that attempts to accept oauth2 token hand off, instead print better error message that token needs to be updated manually
 
 ## [1.4.0] - 2020-11-17
-- Inventory view for faculty
+Inventory view for faculty
 
 ### Added
 - Add Shibboleth support
