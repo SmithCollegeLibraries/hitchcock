@@ -177,14 +177,14 @@ class PanoptoUploadAdmin(NonSortableParentAdmin, UploadChildAdmin):
 class VideoAdmin(PanoptoUploadAdmin):
     form = VideoAdminForm
     base_model = Video  # Explicitly set here!
-    show_in_index = True  # makes child model admin visible in main admin site
+    # show_in_index = True  # makes child model admin visible in main admin site
     inlines = [VideoVttTrackInline,]
 
 @admin.register(Audio)
 class AudioAdmin(PanoptoUploadAdmin):
     form = AudioAdminForm
     base_model = Audio  # Explicitly set here!
-    show_in_index = True  # makes child model admin visible in main admin site
+    # show_in_index = True  # makes child model admin visible in main admin site
     # readonly_fields = ('size_in_mb', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
 
 class AudioAlbumInline(SortableTabularInline):
@@ -201,7 +201,7 @@ class AudioAlbumAdmin(NonSortableParentAdmin, UploadChildAdmin):
 @admin.register(Text)
 class TextAdmin(UploadChildAdmin):
     base_model = Text  # Explicitly set here!
-    show_in_index = True  # makes child model admin visible in main admin site
+    # show_in_index = True  # makes child model admin visible in main admin site
     list_display = ( 'title', 'text_type', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
     readonly_fields = ('size_in_mb', 'created', 'modified', 'url', 'text_type', 'identifier', 'queued_for_processing')
     list_filter = ('published', 'text_type')

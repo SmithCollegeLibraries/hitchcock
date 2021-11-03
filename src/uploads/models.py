@@ -60,8 +60,6 @@ class Upload(PolymorphicModel):
         permissions = [
             ("view_inventory", "Can view non-staff inventory of materials (for faculty)"),
         ]
-        verbose_name = 'upload'
-        verbose_name_plural = 'all uploads'
 
 ### Text i.e. pdf ###
 def text_upload_path(instance, filename):
@@ -111,9 +109,6 @@ class Text(Upload):
         else:
             return None
 
-    class Meta:
-        verbose_name = 'Text upload'
-
 ### Video i.e. mp4 ###
 class Video(Upload):
     upload = models.FileField(
@@ -131,9 +126,6 @@ class Video(Upload):
             return settings.BASE_URL + "/videos/%s" % self.id
         else:
             return None
-
-    class Meta:
-        verbose_name = 'Video upload'
 
 ### Subtitle or caption file i.e. vtt ###
 class VideoVttTrack(SortableMixin):
@@ -197,9 +189,6 @@ class Audio(Upload):
             return settings.BASE_URL + "/audio/%s" % self.id
         else:
             return None
-
-    class Meta:
-        verbose_name = 'audio upload'
 
 class AudioAlbum(Upload):
     album_directory = models.CharField(max_length=512, blank=True, null=True)
