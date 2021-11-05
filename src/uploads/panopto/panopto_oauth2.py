@@ -58,8 +58,8 @@ class PanoptoOAuth2():
             return access_token
         else:
             raise RefreshAccessTokenFailed("You need to set up the refresh token. Go to %s/admin/renew-panopto-token to set it up. More details in README.md." % settings.BASE_URL)
-#            access_token = self.get_new_token()
-#            return access_token
+            # access_token = self.get_new_token()
+            # return access_token
 
     def get_new_token(self):
         # Then, fallback to the full authorization path. Offline access scope is needed to get refresh token.
@@ -134,7 +134,6 @@ class PanoptoOAuth2():
             print()
             print('Get a new access token by using saved refresh token.')
             extra = {'client_id': self.client_id, 'client_secret': self.client_secret}
-            print(self.access_token_endpoint)
             session.refresh_token(self.access_token_endpoint, **extra)
             self.__save_token_to_cache(session.token)
 
@@ -150,11 +149,12 @@ class PanoptoOAuth2():
         Private method of the class.
         Save entire token object from oauthlib (not just refresh token).
         '''
-        os.remove(self.cache_file)
+        if os.path.exists(self.cache_file):
+            os.remove(self.cache_file)
         with open(self.cache_file, 'w') as fw:
             json.dump(token, fw)
-        print('OAuth2 flow provided the token below. Cache it to {0}'.format(self.cache_file))
-        pprint.pprint(token, indent = 4)
+        # print('OAuth2 flow provided the token below. Cache it to {0}'.format(self.cache_file))
+        # pprint.pprint(token, indent = 4)
 
 
 class RedirectTCPServer(ThreadingTCPServer):
