@@ -207,13 +207,14 @@ class VttTrack(SortableMixin):
         self.requests_session.headers.update({'Authorization': 'Bearer ' + self.access_token})
 
         panopto_session_id = self.video.panopto_session_id
-        filename = os.path.split(self.upload.name)[1]
-        url = f'https://{server}/Panopto/api/v1/sessions/{panopto_session_id}/captions'
-        print(url)
-        files = {'file': (filename, self.upload.file.open('rb').read())}
-        data = {'language': self.language}
-        response = self.requests_session.post(url, data=data, files=files)
-        return response
+        # Only try to upload captions if there's a session id to attach it to
+        if panopto_session_id:
+            filename = os.path.split(self.upload.name)[1]
+            url = f'https://{server}/Panopto/api/v1/sessions/{panopto_session_id}/captions'
+            files = {'file': (filename, self.upload.file.open('rb').read())}
+            data = {'language': self.language}
+            response = self.requests_session.post(url, data=data, files=files)
+            return response
 
     def __str__(self):
         if self.upload.name is not None:
