@@ -6,10 +6,8 @@ SECRET_KEY = '¡¡¡CHANGEME!!!'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# ALLOWED_HOSTS = ["localhost",]
-# BASE_URL = "http://localhost:8000"
-ALLOWED_HOSTS = ["localhost",]
-BASE_URL = "http://localhost:8000"
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+BASE_URL = 'http://127.0.0.1:8000'
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
@@ -49,7 +47,6 @@ TEXT_SUBDIR_NAME = 'text/'
 VTT_SUBDIR_NAME = 'vtt/'
 # _definst_/ required for streams in subdirectories
 # WOWZA_ENDPOINT = 'http://localhost:1935/hitchcock/_definst_/'
-# TEXTS_ENDPOINT = 'http://localhost:9999/'
 
 ## PANOPTO SETTINGS
 # PANOPTO_SERVER = ''

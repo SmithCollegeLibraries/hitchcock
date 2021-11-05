@@ -8,21 +8,21 @@ This sample application demonstrates how you may upload a video file to Panopto 
 2. If you do not have Python 3 on your system, install the latest stable version from https://python.org
 3. Install external modules for this application.
 ```
-pip install reqeusts oauthlib requests_oauthlib
+pip install requests oauthlib requests_oauthlib
 pip install boto3
 ```
 
 ## Setup API Client on Panopto server
 1. Sign in to Panopto web site
-2. Click your name in right-upper corner, and clikc "User Settings"
+2. Click your name in right-upper corner, and click "User Settings"
 3. Select "API Clients" tab
 4. Click "Create new API Client" button
 5. Enter arbitrary Client Name
 6. Select Server-side Web Application type.
-7. Enter ```https://localhost``` into CORS Origin URL.
-8. Enter ```http://localhost:9127/redirect``` into Redirect URL.
+7. Enter ```http://127.0.0.1``` into CORS Origin URL.
+8. Enter ```http://127.0.0.1:8000/panopto-auth2-redirect``` into Redirect URL.
 9. The rest can be blank. Click "Create API Client" button.
-10. Note the created Client ID and Client Secret.
+10. Copy and paste the client ID and secret key into settings.py.
 
 ## Determine the target folder ID
 1. Navigate to the target folder on Panopto web site
@@ -30,7 +30,7 @@ pip install boto3
 3. Select Manage tab
 4. Find Folder ID and note it.
 
-## Upload a single file 
+## Upload a single file
 Assuming you have test.mp4 in the current directly, type the following command.
 ```
 python upload.py --server your.site.panopto.com --folder-id [Folder ID] --upload-file test.mp4 --client-id [Client ID] --client-secret [Client Secret]

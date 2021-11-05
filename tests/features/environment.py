@@ -31,7 +31,7 @@ def get_valid_filename(s):
 
 ENVIRONMENT_SETTINGS = {
     'local': {
-        'base_url': 'http://localhost:8000',
+        'base_url': 'http://127.0.0.1:8000',
     },
     'libsandbox': {
         'base_url': 'https://libsandbox.smith.edu/hitchcock',
