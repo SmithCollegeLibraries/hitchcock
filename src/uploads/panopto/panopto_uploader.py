@@ -103,7 +103,7 @@ class PanoptoUploader:
             url = 'https://{0}/Panopto/PublicAPI/REST/sessionUpload'.format(self.server)
             payload = {'FolderId': folder_id}
             headers = {'content-type': 'application/json'}
-            resp = self.requests_session.post(url = url, json = payload, headers = headers)
+            resp = self.requests_session.post(url=url, json=payload, headers=headers)
             if not self.__inspect_response_is_retry_needed(resp):
                 break
 

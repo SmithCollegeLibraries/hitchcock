@@ -7,10 +7,11 @@ from django.core.files.storage import DefaultStorage
 from django.db.models.query_utils import DeferredAttribute
 from adminsortable.fields import SortableForeignKey
 from adminsortable.models import SortableMixin
+from .panopto.panopto_oauth2 import PanoptoOAuth2
 from .tasks import upload_to_panopto
-from .codes import ISO_LANGUAGE_CODES
 import uuid
 import os
+import requests
 
 class Upload(PolymorphicModel):
     """ Generic "Upload" model for subclassing to the content specific models.
@@ -128,27 +129,57 @@ class Video(Upload):
             return None
 
 ### Subtitle or caption file i.e. vtt ###
-class VideoVttTrack(SortableMixin):
+class VttTrack(SortableMixin):
     class Meta:
         ordering = ['vtt_order']
 
-    TEXT_TRACK_TYPES = [
+    VTT_TRACK_TYPES = [
         ('subtitles', 'Subtitles (for language translations)'),
         ('captions', 'Captions (for Deaf and hard-of-hearing users)'),
         ('descriptions', 'Descriptions (for vision impairment)'),
         # ('chapters', 'Chapters'),
         # ('metadata', 'Metadata (for machines, not humans)'),
     ]
+
+    PANOPTO_LANGUAGES = [
+        ('English_USA', 'English (United States)'),
+        ('English_GBR', 'English (United Kingdom)'),
+        ('English_AUS', 'English (Australia)'),
+        ('Spanish_MEX', 'Spanish (Mexico)'),
+        ('Spanish_ESP', 'Spanish (Spain)'),
+        ('Chinese_Simplified', 'Chinese (Simplified)'),
+        ('Chinese_Traditional', 'Chinese (Traditional)'),
+        ('Danish', 'Danish'),
+        ('Dutch', 'Dutch'),
+        ('Finnish', 'Finnish'),
+        ('French', 'French'),
+        ('German', 'German'),
+        ('Hungarian', 'Hungarian'),
+        ('Italian', 'Italian'),
+        ('Japanese', 'Japanese'),
+        ('Korean', 'Korean'),
+        ('Norwegian', 'Norwegian'),
+        ('Polish', 'Polish'),
+        ('Portuguese', 'Portuguese'),
+        ('Russian', 'Russian'),
+        ('Swedish', 'Swedish'),
+        ('Thai', 'Thai'),
+    ]
+
     upload = models.FileField(
         upload_to=settings.AV_SUBDIR_NAME + settings.VTT_SUBDIR_NAME,
         max_length=1024,
         # validators=[validate_audio,],
-        help_text="vtt format only")
-    type = models.CharField(max_length=16, choices=TEXT_TRACK_TYPES)
+        help_text="vtt format only",
+    )
+    type = models.CharField(
+        max_length=20,
+        choices=VTT_TRACK_TYPES,
+    )
     language = models.CharField(
-        max_length=2,
-        choices=ISO_LANGUAGE_CODES,
-        default='en'
+        max_length=20,
+        choices=PANOPTO_LANGUAGES,
+        default='English_USA'
     )
     label = models.CharField(
         max_length=16,
@@ -160,6 +191,29 @@ class VideoVttTrack(SortableMixin):
     created = models.DateTimeField(auto_now_add=True)
     video = SortableForeignKey(Video, on_delete=models.CASCADE)
     vtt_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
+
+    def upload_captions(self, server=settings.PANOPTO_SERVER, skip_verify=False):
+        '''Upload captions using API request and return response object.'''
+        self.oauth2 = PanoptoOAuth2(
+            settings.PANOPTO_SERVER,
+            settings.PANOPTO_CLIENT_ID,
+            settings.PANOPTO_CLIENT_SECRET,
+            not skip_verify,
+            settings.PANOPTO_AUTH_CACHE_FILE_PATH,
+        )
+        self.requests_session = requests.Session()
+        self.requests_session.verify = not skip_verify
+        self.access_token = self.oauth2.get_access_token_authorization_code_grant()
+        self.requests_session.headers.update({'Authorization': 'Bearer ' + self.access_token})
+
+        panopto_session_id = self.video.panopto_session_id
+        filename = os.path.split(self.upload.name)[1]
+        url = f'https://{server}/Panopto/api/v1/sessions/{panopto_session_id}/captions'
+        print(url)
+        files = {'file': (filename, self.upload.file.open('rb').read())}
+        data = {'language': self.language}
+        response = self.requests_session.post(url, data=data, files=files)
+        return response
 
     def __str__(self):
         if self.upload.name is not None:
@@ -320,8 +374,7 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
 @receiver(models.signals.pre_save, sender=Video)
 @receiver(models.signals.pre_save, sender=Audio)
 def update_upload_size(sender, instance, **kwargs):
-    """Saves the file size to the Upload model
-    """
+    """Saves the file size to the Upload model"""
     instance.size = instance.upload.size
 
 @receiver(models.signals.pre_save, sender=Text)
@@ -329,6 +382,10 @@ def update_upload_size(sender, instance, **kwargs):
 @receiver(models.signals.pre_save, sender=Audio)
 @receiver(models.signals.pre_save, sender=AudioAlbum)
 def update_upload_identifier(sender, instance, **kwargs):
-    """Saves a text copy of the ID to a field for searching on
-    """
+    """Saves a text copy of the ID to a field for searching on"""
     instance.identifier = str(instance.id)
+
+@receiver(models.signals.post_save, sender=VttTrack)
+def update_caption_uploads(sender, instance, **kwargs):
+    """Adds the captions to the Panopto session"""
+    instance.upload_captions()

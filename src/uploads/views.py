@@ -37,8 +37,9 @@ def renew_panopto_token(request):
         settings.PANOPTO_CLIENT_ID,
         settings.PANOPTO_CLIENT_SECRET,
         True,
-        settings.PANOPTO_AUTH_CACHE_FILE_PATH)
-#    result = oauth2.get_new_token()
+        settings.PANOPTO_AUTH_CACHE_FILE_PATH,
+    )
+    # result = oauth2.get_new_token()
     result = oauth2.get_authorization_url()
     oauth_state = {
         'access_token_endpoint': oauth2.access_token_endpoint,

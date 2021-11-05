@@ -3,7 +3,7 @@ from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModel
 from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicInline
 from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline, SortableStackedInline
 from django.utils.safestring import mark_safe
-from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text, VideoVttTrack, SiteSetting
+from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text, VttTrack, SiteSetting
 from django.utils.html import format_html
 from . import tasks
 from django import forms
@@ -57,8 +57,8 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
         else:
             return '-'
 
-class VideoVttTrackInline(SortableTabularInline):
-    model = VideoVttTrack
+class VttTrackInline(SortableTabularInline):
+    model = VttTrack
     extra = 1
     exclude = ['label']
 
@@ -178,7 +178,7 @@ class VideoAdmin(PanoptoUploadAdmin):
     form = VideoAdminForm
     base_model = Video  # Explicitly set here!
     # show_in_index = True  # makes child model admin visible in main admin site
-    inlines = [VideoVttTrackInline,]
+    inlines = [VttTrackInline,]
 
 @admin.register(Audio)
 class AudioAdmin(PanoptoUploadAdmin):
