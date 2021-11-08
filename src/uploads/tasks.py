@@ -23,3 +23,9 @@ def upload_to_panopto(id):
     myavupload.panopto_session_id = panopto_session_id
     myavupload.lock_panopto_session_id = True
     myavupload.save()
+    # Now that the panopto_session_id has been saved on the video session,
+    # we should check for any vtt files and uplaod those captions to the
+    # Panopto session as well.
+    vtt_uploads = models.VttTrack.objects.filter(video=myavupload)
+    for track in vtt_uploads:
+        track.upload_captions()
