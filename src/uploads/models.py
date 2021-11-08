@@ -361,6 +361,7 @@ def auto_delete_track_on_delete(sender, instance, **kwargs):
 @receiver(models.signals.post_delete, sender=Text)
 @receiver(models.signals.post_delete, sender=Video)
 @receiver(models.signals.post_delete, sender=Audio)
+@receiver(models.signals.post_delete, sender=VttTrack)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
     """
     Deletes file from filesystem
