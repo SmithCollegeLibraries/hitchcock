@@ -375,6 +375,7 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
 @receiver(models.signals.pre_save, sender=Text)
 @receiver(models.signals.pre_save, sender=Video)
 @receiver(models.signals.pre_save, sender=Audio)
+@receiver(models.signals.pre_save, sender=VttTrack)
 def update_upload_size(sender, instance, **kwargs):
     """Saves the file size to the Upload model"""
     instance.size = instance.upload.size
