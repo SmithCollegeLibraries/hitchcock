@@ -1,5 +1,12 @@
 # Hitchcock Releases
 
+## [2.0.0] - unreleased
+Support for VTT captions
+
+### New functions
+- Support for attaching VTT tracks (for subtitles and captions) to a video upload
+- VTT tracks are automatically uploaded to Panopto
+
 ## [1.6.0] - 2021-11-03
 Version to allow import from older Panopto sessions
 
