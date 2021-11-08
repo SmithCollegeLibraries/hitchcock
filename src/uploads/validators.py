@@ -19,6 +19,12 @@ def validate_audio(field):
     if not ext.lower() in valid_extensions:
         raise ValidationError('Unsupported file extension. Must be one of %s.' % ', '.join(mylist))
 
+def validate_captions(field):
+    ext = os.path.splitext(field.name)[-1]
+    valid_extensions = ['.vtt']
+    if not ext.lower() in valid_extensions:
+        raise ValidationError('Unsupported file extension. Must be vtt.')
+
 def validate_barcode(field):
     try:
         int(field)

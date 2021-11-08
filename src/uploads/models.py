@@ -2,7 +2,6 @@ from django.db import models
 from polymorphic.models import PolymorphicModel
 from django.dispatch import receiver
 from django.conf import settings
-from .validators import validate_video, validate_audio, validate_text, validate_barcode
 from django.core.files.storage import DefaultStorage
 from django.db.models.query_utils import DeferredAttribute
 from adminsortable.fields import SortableForeignKey
@@ -12,6 +11,7 @@ from .tasks import upload_to_panopto
 import uuid
 import os
 import requests
+from .validators import validate_video, validate_audio, validate_text, validate_barcode, validate_captions
 
 class Upload(PolymorphicModel):
     """ Generic "Upload" model for subclassing to the content specific models.
@@ -24,7 +24,7 @@ class Upload(PolymorphicModel):
     identifier = models.CharField(max_length=1024, blank=True, null=True)
     title = models.CharField(max_length=1024)
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
-    barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode,])
+    barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode])
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
     notes = models.TextField(blank=True, null=True)
     modified = models.DateTimeField(auto_now=True)
@@ -85,7 +85,7 @@ class Text(Upload):
     upload = models.FileField(
         upload_to=text_upload_path,
         max_length=1024,
-        validators=[validate_text,],
+        validators=[validate_text],
         help_text="pdf format only"
     )
     TEXT_TYPES = [
@@ -115,7 +115,7 @@ class Video(Upload):
     upload = models.FileField(
         upload_to=settings.AV_SUBDIR_NAME + 'video/',
         max_length=1024,
-        validators=[validate_video,],
+        validators=[validate_video],
         help_text="mp4 format only")
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
@@ -169,7 +169,7 @@ class VttTrack(SortableMixin):
     upload = models.FileField(
         upload_to=settings.AV_SUBDIR_NAME + settings.VTT_SUBDIR_NAME,
         max_length=1024,
-        # validators=[validate_audio,],
+        validators=[validate_captions],
         help_text="vtt format only",
     )
     type = models.CharField(
@@ -232,7 +232,7 @@ class Audio(Upload):
     upload = models.FileField(
         upload_to=settings.AV_SUBDIR_NAME + 'audio/',
         max_length=1024,
-        validators=[validate_audio,],
+        validators=[validate_audio],
         help_text="mp3 or wav format only")
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
@@ -310,7 +310,7 @@ class AudioTrack(SortableMixin):
     upload = models.FileField(
         upload_to=audiotrack_upload_path,
         max_length=1024,
-        validators=[validate_audio,],
+        validators=[validate_audio],
         help_text="mp3 format only")
     title = models.CharField(max_length=512)
     modified = models.DateTimeField(auto_now=True)
