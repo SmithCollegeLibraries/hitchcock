@@ -1,16 +1,18 @@
-from django.db import models
-from polymorphic.models import PolymorphicModel
-from django.dispatch import receiver
-from django.conf import settings
-from django.core.files.storage import DefaultStorage
-from django.db.models.query_utils import DeferredAttribute
-from adminsortable.fields import SortableForeignKey
-from adminsortable.models import SortableMixin
-from .panopto.panopto_oauth2 import PanoptoOAuth2
-from .tasks import upload_to_panopto
 import uuid
 import os
 import requests
+
+from django.core.files.storage import DefaultStorage
+from django.db import models
+from django.db.models.query_utils import DeferredAttribute
+from django.dispatch import receiver
+from django.conf import settings
+from adminsortable.fields import SortableForeignKey
+from adminsortable.models import SortableMixin
+from model_utils import FieldTracker
+from polymorphic.models import PolymorphicModel
+from .panopto.panopto_oauth2 import PanoptoOAuth2
+from .tasks import upload_to_panopto
 from .validators import validate_video, validate_audio, validate_text, validate_barcode, validate_captions
 
 class Upload(PolymorphicModel):
@@ -32,6 +34,7 @@ class Upload(PolymorphicModel):
     size = models.BigIntegerField(blank=True, null=True)
     published = models.BooleanField(default=True)
     queued_for_processing = models.BooleanField(default=False)
+    tracker = FieldTracker()
     @property
     def name(self):
         if self.upload.name is not None:
@@ -379,6 +382,18 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
 def update_upload_size(sender, instance, **kwargs):
     """Saves the file size to the Upload model"""
     instance.size = instance.upload.size
+
+# Delete old file if the file has changed
+@receiver(models.signals.post_save, sender=Text)
+@receiver(models.signals.post_save, sender=Video)
+@receiver(models.signals.post_save, sender=Audio)
+@receiver(models.signals.post_save, sender=VttTrack)
+def update_upload_size(sender, instance, **kwargs):
+    """Cheks the old file against the new file, and if it has changed,
+    deletes the old file.
+    """
+    if instance.upload.path != instance.tracker.previous('upload').path:
+        os.remove(instance.tracker.previous('upload').path)
 
 @receiver(models.signals.pre_save, sender=Text)
 @receiver(models.signals.pre_save, sender=Video)
