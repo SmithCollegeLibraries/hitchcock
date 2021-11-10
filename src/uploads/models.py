@@ -1,17 +1,19 @@
-from django.db import models
-from polymorphic.models import PolymorphicModel
-from django.dispatch import receiver
-from django.conf import settings
-from .validators import validate_video, validate_audio, validate_text, validate_barcode
-from django.core.files.storage import DefaultStorage
-from django.db.models.query_utils import DeferredAttribute
-from adminsortable.fields import SortableForeignKey
-from adminsortable.models import SortableMixin
-from .panopto.panopto_oauth2 import PanoptoOAuth2
-from .tasks import upload_to_panopto
 import uuid
 import os
 import requests
+
+from django.core.files.storage import DefaultStorage
+from django.db import models
+from django.db.models.query_utils import DeferredAttribute
+from django.dispatch import receiver
+from django.conf import settings
+from adminsortable.fields import SortableForeignKey
+from adminsortable.models import SortableMixin
+from model_utils import FieldTracker
+from polymorphic.models import PolymorphicModel
+from .panopto.panopto_oauth2 import PanoptoOAuth2
+from .tasks import upload_to_panopto
+from .validators import validate_video, validate_audio, validate_text, validate_barcode, validate_captions
 
 class Upload(PolymorphicModel):
     """ Generic "Upload" model for subclassing to the content specific models.
@@ -24,7 +26,7 @@ class Upload(PolymorphicModel):
     identifier = models.CharField(max_length=1024, blank=True, null=True)
     title = models.CharField(max_length=1024)
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
-    barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode,])
+    barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode])
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
     notes = models.TextField(blank=True, null=True)
     modified = models.DateTimeField(auto_now=True)
@@ -85,7 +87,7 @@ class Text(Upload):
     upload = models.FileField(
         upload_to=text_upload_path,
         max_length=1024,
-        validators=[validate_text,],
+        validators=[validate_text],
         help_text="pdf format only"
     )
     TEXT_TYPES = [
@@ -96,6 +98,7 @@ class Text(Upload):
     ]
 
     text_type = models.CharField(max_length=16, choices=TEXT_TYPES, help_text="Text type cannot be changed after saving.")
+    tracker = FieldTracker()
 
     @property
     def url(self):
@@ -115,11 +118,12 @@ class Video(Upload):
     upload = models.FileField(
         upload_to=settings.AV_SUBDIR_NAME + 'video/',
         max_length=1024,
-        validators=[validate_video,],
+        validators=[validate_video],
         help_text="mp4 format only")
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
+    tracker = FieldTracker()
 
     @property
     def url(self):
@@ -129,7 +133,7 @@ class Video(Upload):
             return None
 
 ### Subtitle or caption file i.e. vtt ###
-class VttTrack(SortableMixin):
+class VttTrack(models.Model):
     class Meta:
         ordering = ['vtt_order']
 
@@ -169,7 +173,7 @@ class VttTrack(SortableMixin):
     upload = models.FileField(
         upload_to=settings.AV_SUBDIR_NAME + settings.VTT_SUBDIR_NAME,
         max_length=1024,
-        # validators=[validate_audio,],
+        validators=[validate_captions],
         help_text="vtt format only",
     )
     type = models.CharField(
@@ -191,6 +195,7 @@ class VttTrack(SortableMixin):
     created = models.DateTimeField(auto_now_add=True)
     video = SortableForeignKey(Video, on_delete=models.CASCADE)
     vtt_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
+    tracker = FieldTracker()
 
     def upload_captions(self, server=settings.PANOPTO_SERVER, skip_verify=False):
         '''Upload captions using API request and return response object.'''
@@ -232,11 +237,12 @@ class Audio(Upload):
     upload = models.FileField(
         upload_to=settings.AV_SUBDIR_NAME + 'audio/',
         max_length=1024,
-        validators=[validate_audio,],
+        validators=[validate_audio],
         help_text="mp3 or wav format only")
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
+    tracker = FieldTracker()
 
     @property
     def url(self):
@@ -310,7 +316,7 @@ class AudioTrack(SortableMixin):
     upload = models.FileField(
         upload_to=audiotrack_upload_path,
         max_length=1024,
-        validators=[validate_audio,],
+        validators=[validate_audio],
         help_text="mp3 format only")
     title = models.CharField(max_length=512)
     modified = models.DateTimeField(auto_now=True)
@@ -361,6 +367,7 @@ def auto_delete_track_on_delete(sender, instance, **kwargs):
 @receiver(models.signals.post_delete, sender=Text)
 @receiver(models.signals.post_delete, sender=Video)
 @receiver(models.signals.post_delete, sender=Audio)
+@receiver(models.signals.post_delete, sender=VttTrack)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
     """
     Deletes file from filesystem
@@ -374,9 +381,25 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
 @receiver(models.signals.pre_save, sender=Text)
 @receiver(models.signals.pre_save, sender=Video)
 @receiver(models.signals.pre_save, sender=Audio)
+@receiver(models.signals.pre_save, sender=VttTrack)
 def update_upload_size(sender, instance, **kwargs):
     """Saves the file size to the Upload model"""
     instance.size = instance.upload.size
+
+# Delete old file if the file has changed
+@receiver(models.signals.post_save, sender=Text)
+@receiver(models.signals.post_save, sender=Video)
+@receiver(models.signals.post_save, sender=Audio)
+@receiver(models.signals.post_save, sender=VttTrack)
+def delete_previous_upload(sender, instance, **kwargs):
+    """Checks the old file against the new file, and if it has changed,
+    deletes the old file.
+    """
+    previous_upload = instance.tracker.previous('upload')
+    print(previous_upload)
+    if previous_upload:
+        if instance.upload.path != previous_upload.path:
+            os.remove(instance.tracker.previous('upload').path)
 
 @receiver(models.signals.pre_save, sender=Text)
 @receiver(models.signals.pre_save, sender=Video)
