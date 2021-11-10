@@ -132,7 +132,7 @@ class Video(Upload):
             return None
 
 ### Subtitle or caption file i.e. vtt ###
-class VttTrack(SortableMixin):
+class VttTrack(models.Model):
     class Meta:
         ordering = ['vtt_order']
 
@@ -194,6 +194,7 @@ class VttTrack(SortableMixin):
     created = models.DateTimeField(auto_now_add=True)
     video = SortableForeignKey(Video, on_delete=models.CASCADE)
     vtt_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
+    tracker = FieldTracker()
 
     def upload_captions(self, server=settings.PANOPTO_SERVER, skip_verify=False):
         '''Upload captions using API request and return response object.'''
@@ -388,12 +389,15 @@ def update_upload_size(sender, instance, **kwargs):
 @receiver(models.signals.post_save, sender=Video)
 @receiver(models.signals.post_save, sender=Audio)
 @receiver(models.signals.post_save, sender=VttTrack)
-def update_upload_size(sender, instance, **kwargs):
-    """Cheks the old file against the new file, and if it has changed,
+def delete_previous_upload(sender, instance, **kwargs):
+    """Checks the old file against the new file, and if it has changed,
     deletes the old file.
     """
-    if instance.upload.path != instance.tracker.previous('upload').path:
-        os.remove(instance.tracker.previous('upload').path)
+    previous_upload = instance.tracker.previous('upload')
+    print(previous_upload)
+    if previous_upload:
+        if instance.upload.path != previous_upload.path:
+            os.remove(instance.tracker.previous('upload').path)
 
 @receiver(models.signals.pre_save, sender=Text)
 @receiver(models.signals.pre_save, sender=Video)

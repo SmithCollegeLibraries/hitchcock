@@ -57,7 +57,7 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
         else:
             return '-'
 
-class VttTrackInline(SortableTabularInline):
+class VttTrackInline(admin.TabularInline):
     model = VttTrack
     extra = 1
     exclude = ['label']
