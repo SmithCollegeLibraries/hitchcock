@@ -6,6 +6,13 @@ Support for VTT captions
 ### New functions
 - Support for attaching VTT tracks (for subtitles and captions) to a video upload
 - VTT tracks are automatically uploaded to Panopto
+- Added management command which allows the user to locate all unused files
+  and keep them in a separate directory
+
+### Improvements
+- Upgraded Django to 3.2.9
+- When the file for an audio, video, text, or VTT track is changed, the old
+  version of the file is now automatically deleted
 
 ## [1.6.0] - 2021-11-03
 Version to allow import from older Panopto sessions
