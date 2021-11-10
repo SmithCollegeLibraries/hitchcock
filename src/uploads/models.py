@@ -197,7 +197,7 @@ class VttTrack(models.Model):
     vtt_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
     tracker = FieldTracker()
 
-    def upload_captions(self, server=settings.PANOPTO_SERVER, skip_verify=False):
+    def upload_captions(self, skip_verify=False):
         '''Upload captions using API request and return response object.'''
         self.oauth2 = PanoptoOAuth2(
             settings.PANOPTO_SERVER,
@@ -215,7 +215,7 @@ class VttTrack(models.Model):
         # Only try to upload captions if there's a session id to attach it to
         if panopto_session_id:
             filename = os.path.split(self.upload.name)[1]
-            url = f'https://{server}/Panopto/api/v1/sessions/{panopto_session_id}/captions'
+            url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/sessions/{panopto_session_id}/captions'
             files = {'file': (filename, self.upload.file.open('rb').read())}
             data = {'language': self.language}
             response = self.requests_session.post(url, data=data, files=files)
@@ -274,8 +274,7 @@ class SiteSetting(models.Model):
 
 @receiver(models.signals.pre_save, sender=AudioAlbum)
 def set_album_directory(sender, instance, **kwargs):
-    """
-    Sets the album_directory field for a newly created AudioAlbum object.
+    """Sets the album_directory field for a newly created AudioAlbum object.
     Does not run after creation. I.e. this field cannot be changed after
     the object is saved. Cheap way to make it so that the user can make minor
     changes to the title after saving without accidentally altering the
@@ -290,8 +289,8 @@ def set_album_directory(sender, instance, **kwargs):
 
 @receiver(models.signals.post_delete, sender=AudioAlbum)
 def auto_delete_album_on_delete(sender, instance, **kwargs):
-    """
-    Delete empty album directory on delete of the corresponding object
+    """Delete empty album directory on delete of the
+    corresponding object
     """
     if instance.album_directory is not None:
         album_directory = settings.MEDIA_ROOT + '/' + instance.album_directory
@@ -330,8 +329,8 @@ class AudioTrack(SortableMixin):
 
 @receiver(models.signals.pre_save, sender=AudioTrack)
 def update_album_size(sender, instance, **kwargs):
-    """
-    Update album size calculation after each time a track is saved or updated.
+    """Update album size calculation after each time a track
+    is saved or updated.
     """
     sum_size = 0
     try:
@@ -352,8 +351,7 @@ def update_album_size(sender, instance, **kwargs):
 
 @receiver(models.signals.post_delete, sender=AudioTrack)
 def auto_delete_track_on_delete(sender, instance, **kwargs):
-    """
-    Deletes file from filesystem
+    """Deletes file from filesystem
     when corresponding `Upload` object is deleted.
     """
     if instance.upload:
@@ -363,19 +361,48 @@ def auto_delete_track_on_delete(sender, instance, **kwargs):
     # AND update album total size
     update_album_size(sender, instance, **kwargs)
 
-# Handle deletion
+# Delete file from server if Hitchcock entry is deleted
 @receiver(models.signals.post_delete, sender=Text)
 @receiver(models.signals.post_delete, sender=Video)
 @receiver(models.signals.post_delete, sender=Audio)
 @receiver(models.signals.post_delete, sender=VttTrack)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
-    """
-    Deletes file from filesystem
+    """Deletes file from filesystem
     when corresponding `Upload` object is deleted.
     """
     if instance.upload:
         if os.path.isfile(instance.upload.path):
             os.remove(instance.upload.path)
+
+# Add tag to Panopto session when Hitchcock entry is deleted
+@receiver(models.signals.post_delete, sender=Video)
+@receiver(models.signals.post_delete, sender=Audio)
+def tag_panopto_session_on_delete(sender, instance, skip_verify=False, **kwargs):
+    """Adds `deleted-from-hitchcock` tag to Panopto sessions upon
+    deletion of the upload in Hitchcock.
+    """
+    if instance.panopto_session_id:
+        oauth2 = PanoptoOAuth2(
+            settings.PANOPTO_SERVER,
+            settings.PANOPTO_CLIENT_ID,
+            settings.PANOPTO_CLIENT_SECRET,
+            not skip_verify,
+            settings.PANOPTO_AUTH_CACHE_FILE_PATH,
+        )
+        requests_session = requests.Session()
+        requests_session.verify = not skip_verify
+        access_token = oauth2.get_access_token_authorization_code_grant()
+        requests_session.headers.update({'Authorization': 'Bearer ' + access_token})
+        url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/sessions/{instance.panopto_session_id}/tags'
+
+        existing_tags_json = requests_session.get(url).json()
+        print(existing_tags_json)
+        tags = [t["Content"] for t in existing_tags_json]
+        tags.append('deleted-from-hitchcock')
+        data = {'Tags': tags}
+        print(data)
+        response = requests_session.put(url, data=data)
+        return response
 
 # Calculate size and save it to the parent Upload object
 @receiver(models.signals.pre_save, sender=Text)

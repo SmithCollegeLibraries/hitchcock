@@ -13,6 +13,8 @@ Support for VTT captions
 - Upgraded Django to 3.2.9
 - When the file for an audio, video, text, or VTT track is changed, the old
   version of the file is now automatically deleted
+- When a file is deleted from Hitchcock, the corresponding Panopto session
+  (if one exists) is tagged #deleted-from-hitchcock
 
 ## [1.6.0] - 2021-11-03
 Version to allow import from older Panopto sessions
