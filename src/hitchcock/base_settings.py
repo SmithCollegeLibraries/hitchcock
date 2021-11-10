@@ -77,9 +77,7 @@ WSGI_APPLICATION = 'hitchcock.wsgi.application'
 # For adminsortable https://github.com/alsoicode/django-admin-sortable#configuration
 CSRF_COOKIE_HTTPONLY = True
 
-# Database
-# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
