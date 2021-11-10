@@ -23,6 +23,7 @@ from django.views.generic import RedirectView
 admin.sites.AdminSite.site_header = 'Hitchcock Smith Libraries e-reserves administration'
 admin.sites.AdminSite.site_title = 'Hitchcock Smith Libraries e-reserves administration'
 admin.sites.AdminSite.site_url = None # Disable "view site" link in header
+admin.sites.AdminSite.enable_nav_sidebar = False
 
 urlpatterns = [
     # Skip the uploads app index page and go directly to the changelist
