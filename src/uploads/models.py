@@ -34,7 +34,6 @@ class Upload(PolymorphicModel):
     size = models.BigIntegerField(blank=True, null=True)
     published = models.BooleanField(default=True)
     queued_for_processing = models.BooleanField(default=False)
-    tracker = FieldTracker()
     @property
     def name(self):
         if self.upload.name is not None:
@@ -99,6 +98,7 @@ class Text(Upload):
     ]
 
     text_type = models.CharField(max_length=16, choices=TEXT_TYPES, help_text="Text type cannot be changed after saving.")
+    tracker = FieldTracker()
 
     @property
     def url(self):
@@ -123,6 +123,7 @@ class Video(Upload):
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
+    tracker = FieldTracker()
 
     @property
     def url(self):
@@ -241,6 +242,7 @@ class Audio(Upload):
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
+    tracker = FieldTracker()
 
     @property
     def url(self):
