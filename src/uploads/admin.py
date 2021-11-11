@@ -34,7 +34,7 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
 
     base_model = Upload  # Optional, explicitly set here.
-    search_fields = ['title', 'barcode', 'ereserves_record_url']
+    search_fields = ['title', 'barcode', 'upload', 'notes', 'ereserves_record_url']
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
     ordering = ('-modified',)
     list_filter = ('published',)

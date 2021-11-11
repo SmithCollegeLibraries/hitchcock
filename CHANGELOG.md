@@ -5,7 +5,7 @@ Support for VTT captions
 
 ### New functions
 - Support for attaching VTT tracks (for subtitles and captions) to a video upload
-- VTT tracks are automatically uploaded to Panopto
+  (VTT tracks are automatically uploaded to Panopto if there is a Panopto session)
 - Added management command which allows the user to locate all unused files
   and keep them in a separate directory
 
@@ -15,6 +15,7 @@ Support for VTT captions
   version of the file is now automatically deleted
 - When a file is deleted from Hitchcock, the corresponding Panopto session
   (if one exists) is tagged #deleted-from-hitchcock
+- Notes and filenames are now searchable
 
 ## [1.6.0] - 2021-11-03
 Version to allow import from older Panopto sessions
