@@ -4,10 +4,14 @@
 Support for VTT captions
 
 ### New functions
-- Support for attaching VTT tracks (for subtitles and captions) to a video upload
-  (VTT tracks are automatically uploaded to Panopto if there is a Panopto session)
-- Added management command which allows the user to locate all unused files
-  and keep them in a separate directory
+- Support for attaching VTT tracks (for subtitles and captions) to a video
+  upload (VTT tracks are automatically uploaded to Panopto if there is a
+  Panopto session)
+- Added management command `move_unused_files` which allows the user to locate
+  all unused files and keep them in a separate directory
+- Added management command `rename_upload` which allows the user to provide
+  a new filename for a poorly labeled file, or to move a file which has found
+  its way to the wrong place
 
 ### Improvements
 - Upgraded Django to 3.2.9
@@ -21,7 +25,8 @@ Support for VTT captions
 Version to allow import from older Panopto sessions
 
 ### New functions
-- Added script which allows us to add previously uploaded Panopto sessions to Hitchcock
+- Added management command `create_uploads_from_csv` which allows us to add
+  previously uploaded Panopto sessions to Hitchcock
 
 ### Improvements
 - Changed display of upload size to MB instead of bytes
