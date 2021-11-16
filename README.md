@@ -72,3 +72,48 @@ In order to outlast the temporary duration of a web request, Hitchcock backgroun
 
 ### Fulfilling requests
 When a Hitchcock video URL is requested the system looks up the Panopto session id and redirects the user's browser to the Panopto session player page.
+
+
+## Management commands
+
+### create_uploads_from_csv
+
+Usage: `python manage.py create_uploads_from_csv path/to/spreadsheet_file.csv /path/to/import/directory`
+
+Takes a CSV file with a specific column structure and uses it to add the files
+to the media directory, create new upload objects, and link the new upload
+objects to the existing Panopto sessions.
+
+### move_unused_files
+
+Usage: `python manage.py move_unused_files [name_for_unused_folder]`.
+
+This script searches the media root for video, audio, texts, and subtitle
+tracks that aren't linked to an upload object, and moves them to the
+designated folder. These files can then be manually deleted as desired.
+
+The parameter `[name_for_unused_folder]` indicates the name of the folder,
+directly under the media root, where unlinked files should go. It defaults
+to `unused`. If the folder doesn't exist, it will be created.
+
+### rename_upload
+
+Usage: `python manage.py rename_upload type_of_upload old_file_name new_file_name`
+
+This script allows an admin to rename a file that was given an non-descriptive
+filename (such as `video.mp4`), or to move a file that was saved in the wrong
+place.
+
+The parameter `type_of_upload` can be one of four values: `Video`, `Audio`,
+`Text`, or `VttTrack` (capitalization is important). This indicates the type
+of file that needs to be moved.
+
+The parameters `old_file_name` and `new_file_name` are just the filename with
+extension, not the complete path. The script will resave any upload
+associated with a file that matches the exact filename, regardless of what
+folder that file is in. When the new file is saved, it will be located in
+the default folder for that media type, which may be different from the place
+that the file was originally saved.
+
+If the old file name and the new file name are the same, and the location is
+also the same, a suffix will be appended.
