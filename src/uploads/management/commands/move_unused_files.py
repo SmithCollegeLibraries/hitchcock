@@ -2,6 +2,7 @@ import csv
 import os.path
 import re
 import shutil
+from os import walk
 from hitchcock import settings
 
 from django.core.files import File
@@ -12,10 +13,6 @@ from uploads.models import Text, Audio, Video, VttTrack
 
 UNUSED = 'unused'
 MODELS_TO_PROCESS = [Text, Audio, Video, VttTrack]
-DIRECTORIES_TO_PROCESS = [
-    'av/video',
-    'text/articles',
-]
 EXTENSIONS = ['.mp3', '.mp4', '.mpeg3', '.mpeg4', '.wav', '.vtt', '.pdf']
 
 
@@ -46,15 +43,12 @@ class Command(BaseCommand):
         # of every file, used or not (for files with one of the extensions
         # listed; we won't want to move other kinds of files)
         all_media_files = []
-        for d in DIRECTORIES_TO_PROCESS:
-            # Get full path of each directory listed at the top of this
-            # document -- splitting at the slash first
-            p = os.path.join(settings.MEDIA_ROOT, *d.split('/'))
+        for (dirpath, dirnames, filenames) in walk(settings.MEDIA_ROOT):
             # For each file in each of those directories, add it to the list
-            for f in os.listdir(p):
-                extension = os.path.splitext(f)[1]
+            for n in filenames:
+                extension = os.path.splitext(n)[1]
                 if extension in EXTENSIONS:
-                    all_media_files.append(os.path.join(p, f))
+                    all_media_files.append(os.path.join(dirpath, n))
 
         for f in all_media_files:
             if f not in files_in_use:
