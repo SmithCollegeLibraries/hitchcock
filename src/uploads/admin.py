@@ -11,6 +11,14 @@ import copy
 from django.utils.html import strip_tags
 
 
+# This is a hacky way to set text in the admin site, but it works...
+# https://stackoverflow.com/questions/4938491/django-admin-change-header-django-administration-text
+admin.sites.AdminSite.site_header = 'Hitchcock Smith Libraries e-reserves administration'
+admin.sites.AdminSite.site_title = 'Hitchcock Smith Libraries e-reserves administration'
+admin.sites.AdminSite.site_url = None # Disable "view site" link in header
+admin.sites.AdminSite.enable_nav_sidebar = False
+
+
 def bytes_to_mb(byte_number):
     # If 10 MB or more, display as whole number
     if byte_number >= 10**7:
