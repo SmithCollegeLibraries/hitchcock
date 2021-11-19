@@ -21,7 +21,7 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     # Skip the uploads app index page and go directly to the changelist
-    path('admin/uploads/', RedirectView.as_view(url=settings.BASE_URL + '/admin/uploads/upload/')),
+    path('admin/uploads/', RedirectView.as_view(url='upload/')),
     path('admin/', admin.site.urls),
     path('', include('uploads.urls')),
 ]
