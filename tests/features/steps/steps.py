@@ -70,31 +70,14 @@ def setp_imp(context, object_type):
     title_input = driver.find_element_by_name('title')
     title_input.send_keys('Test %s upload %s' % (object_type, unique_string))
 
-    if object_type == 'audio album':
-        track_num = 0
-        for track in test_files['audio album']:
-            add_track_button = get_includes_text(driver, 'a', \
-            'Add another Audio track')
-            add_track_button.click()
-            choose_file_button = driver.find_element_by_name( \
-            'audiotrack_set-%i-upload' % track_num)
-            filename = test_files['audio album'][track_num]['file']
-            filename = os.getcwd() + '/sample_upload_files/album/' + filename
-            choose_file_button.send_keys(filename)
-            title = test_files['audio album'][track_num]['title']
-            title_input = driver.find_element_by_name( \
-            'audiotrack_set-%i-title' % track_num)
-            title_input.send_keys(title)
-            track_num += 1
-    else:
-        upload_button = driver.find_element_by_name('upload')
-        filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]
-        upload_button.send_keys(filename)
-        # Make sure to set the text type before saving if it's a text object
-        if object_type == 'text':
-            text_type_element = driver.get_element('#id_text_type')
-            select_box = Select(text_type_element)
-            select_box.select_by_value('article')
+    upload_button = driver.find_element_by_name('upload')
+    filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]
+    upload_button.send_keys(filename)
+    # Make sure to set the text type before saving if it's a text object
+    if object_type == 'text':
+        text_type_element = driver.get_element('#id_text_type')
+        select_box = Select(text_type_element)
+        select_box.select_by_value('article')
     submit_button = driver.find_element_by_xpath(
         "//input[@value='Save and continue editing']")
     submit_button.click()

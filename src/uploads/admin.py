@@ -1,9 +1,10 @@
 from django.contrib import admin
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicInline
-from adminsortable.admin import NonSortableParentAdmin, SortableTabularInline, SortableStackedInline
+from adminsortable2.admin import SortableInlineAdminMixin
 from django.utils.safestring import mark_safe
-from .models import Upload, Video, Audio, AudioAlbum, AudioTrack, Text, VttTrack, SiteSetting
+from .models import Upload, Video, Audio, Text, VttTrack, SiteSetting
+from .models import AudioPlaylist, AudioPlaylistLink, VideoPlaylist, VideoPlaylistLink
 from django.utils.html import format_html
 from . import tasks
 from django import forms
@@ -70,6 +71,16 @@ class VttTrackInline(admin.TabularInline):
     extra = 1
     exclude = ['label']
 
+class AudioInline(SortableInlineAdminMixin, admin.TabularInline):
+    # We use the juction model specified on AudioPlaylist.
+    # https://django-admin-sortable2.readthedocs.io/en/latest/usage.html
+    model = AudioPlaylist.audio.through
+
+class VideoInline(SortableInlineAdminMixin, admin.TabularInline):
+    # We use the juction model specified on VideoPlaylist.
+    # https://django-admin-sortable2.readthedocs.io/en/latest/usage.html
+    model = VideoPlaylist.video.through
+
 class VideoAdminForm(forms.ModelForm):
     upload_to_panopto = forms.BooleanField(required=False)
 
@@ -116,7 +127,7 @@ class AudioAdminForm(forms.ModelForm):
         model = Audio
         fields = "__all__"
 
-class PanoptoUploadAdmin(NonSortableParentAdmin, UploadChildAdmin):
+class PanoptoUploadAdmin(UploadChildAdmin):
     readonly_fields = ['size_in_mb', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing']
     def get_fieldsets(self, request, obj=None):
         if obj is None:
@@ -186,7 +197,7 @@ class VideoAdmin(PanoptoUploadAdmin):
     form = VideoAdminForm
     base_model = Video  # Explicitly set here!
     # show_in_index = True  # makes child model admin visible in main admin site
-    inlines = [VttTrackInline,]
+    inlines = [VttTrackInline]
 
 @admin.register(Audio)
 class AudioAdmin(PanoptoUploadAdmin):
@@ -195,22 +206,11 @@ class AudioAdmin(PanoptoUploadAdmin):
     # show_in_index = True  # makes child model admin visible in main admin site
     # readonly_fields = ('size_in_mb', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
 
-class AudioAlbumInline(SortableTabularInline):
-    model = AudioTrack
-    extra = 1
-
-@admin.register(AudioAlbum)
-class AudioAlbumAdmin(NonSortableParentAdmin, UploadChildAdmin):
-    base_model = AudioAlbum  # Explicitly set here!
-    # show_in_index = True  # makes child model admin visible in main admin site
-    readonly_fields = ('size_in_mb', 'created', 'modified', 'album_directory', 'identifier', 'url', 'queued_for_processing')
-    inlines = [AudioAlbumInline,]
-
 @admin.register(Text)
 class TextAdmin(UploadChildAdmin):
     base_model = Text  # Explicitly set here!
     # show_in_index = True  # makes child model admin visible in main admin site
-    list_display = ( 'title', 'text_type', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
+    list_display = ('title', 'text_type', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
     readonly_fields = ('size_in_mb', 'created', 'modified', 'url', 'text_type', 'identifier', 'queued_for_processing')
     list_filter = ('published', 'text_type')
     def get_readonly_fields(self, request, obj=None):
@@ -224,6 +224,22 @@ class TextAdmin(UploadChildAdmin):
             return ['size_in_mb', 'created', 'modified', 'identifier', 'url', 'queued_for_processing']
         else:
             return ['size_in_mb', 'created', 'modified', 'text_type', 'identifier', 'url', 'queued_for_processing']
+
+@admin.register(AudioPlaylist)
+class AudioPlaylistAdmin(admin.ModelAdmin):
+    base_model = AudioPlaylist
+    list_display = ('title', 'panopto_playlist_id')
+    readonly_fields = ('panopto_playlist_id',)
+    list_filter = ('title',)
+    inlines = [AudioInline]
+
+@admin.register(VideoPlaylist)
+class VideoPlaylistAdmin(admin.ModelAdmin):
+    base_model = VideoPlaylist
+    list_display = ('title', 'panopto_playlist_id')
+    readonly_fields = ('panopto_playlist_id',)
+    list_filter = ('title',)
+    inlines = [VideoInline]
 
 class MissingEReservesRecordFilter(admin.SimpleListFilter):
     title = "empty e-reserves url"

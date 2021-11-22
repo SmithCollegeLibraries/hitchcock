@@ -7,8 +7,6 @@ from django.db import models
 from django.db.models.query_utils import DeferredAttribute
 from django.dispatch import receiver
 from django.conf import settings
-from adminsortable.fields import SortableForeignKey
-from adminsortable.models import SortableMixin
 from model_utils import FieldTracker
 from polymorphic.models import PolymorphicModel
 from .panopto.panopto_oauth2 import PanoptoOAuth2
@@ -193,7 +191,7 @@ class VttTrack(models.Model):
     )
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
-    video = SortableForeignKey(Video, on_delete=models.CASCADE)
+    video = models.ForeignKey(Video, on_delete=models.CASCADE)
     vtt_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
     tracker = FieldTracker()
 
@@ -251,14 +249,44 @@ class Audio(Upload):
         else:
             return None
 
-class AudioAlbum(Upload):
-    album_directory = models.CharField(max_length=512, blank=True, null=True)
-    @property
-    def url(self):
-        if self.created is not None:
-            return settings.BASE_URL + "/audio-album/%s" % self.id
-        else:
-            return None
+class AudioPlaylist(models.Model):
+    title = models.CharField(max_length=512)
+    panopto_playlist_id = models.CharField(max_length=256, blank=True, null=True)
+    audio = models.ManyToManyField(Audio, through='AudioPlaylistLink')
+
+    def __str__(self):
+        return self.title if self.title else 'Unnamed Audio Playlist'
+
+class AudioPlaylistLink(models.Model):
+    class Meta:
+        ordering = ['playlist_order']
+        unique_together = ['audio', 'playlist']
+    audio = models.ForeignKey(Audio, on_delete=models.CASCADE)
+    playlist = models.ForeignKey(AudioPlaylist, on_delete=models.CASCADE)
+    playlist_order = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f'{str(self.playlist)} - {str(self.playlist_order)}. {str(self.audio)}'
+
+class VideoPlaylist(models.Model):
+    title = models.CharField(max_length=512)
+    panopto_playlist_id = models.CharField(max_length=256, blank=True, null=True)
+    video = models.ManyToManyField(Video, through='VideoPlaylistLink')
+
+    def __str__(self):
+        return self.title if self.title else 'Unnamed Video Playlist'
+
+class VideoPlaylistLink(models.Model):
+    class Meta:
+        ordering = ['playlist_order']
+        unique_together = ['video', 'playlist']
+    video = models.ForeignKey(Video, on_delete=models.CASCADE)
+    playlist = models.ForeignKey(VideoPlaylist, on_delete=models.CASCADE)
+    playlist_order = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f'{str(self.playlist)} - {str(self.playlist_order)}. {str(self.video)}'
+
 
 class SiteSetting(models.Model):
     """A place in the database for miscellaneous settings that are configurable
@@ -270,96 +298,6 @@ class SiteSetting(models.Model):
 
     def __str__(self):
         return self.setting_key
-
-
-@receiver(models.signals.pre_save, sender=AudioAlbum)
-def set_album_directory(sender, instance, **kwargs):
-    """Sets the album_directory field for a newly created AudioAlbum object.
-    Does not run after creation. I.e. this field cannot be changed after
-    the object is saved. Cheap way to make it so that the user can make minor
-    changes to the title after saving without accidentally altering the
-    target album dir.
-    """
-    if instance.album_directory is None:
-        storage = DefaultStorage()
-        valid_filename = storage.get_valid_name(instance.title)
-        proposed_path = settings.AUDIO_ALBUMS_SUBDIR_NAME + valid_filename
-        available_filename = storage.get_available_name(proposed_path)
-        instance.album_directory = available_filename
-
-@receiver(models.signals.post_delete, sender=AudioAlbum)
-def auto_delete_album_on_delete(sender, instance, **kwargs):
-    """Delete empty album directory on delete of the
-    corresponding object
-    """
-    if instance.album_directory is not None:
-        album_directory = settings.MEDIA_ROOT + '/' + instance.album_directory
-        print("Deleting the dir %s" % album_directory)
-        if os.path.isdir(album_directory):
-            os.rmdir(album_directory)
-
-def audiotrack_upload_path(instance, filename):
-    # Get parent album upload directory
-    base_path = instance.album.album_directory
-    # Reimpliment filename sanitization, and collision avoidance
-    storage = instance.upload.storage
-    valid_filename = storage.get_valid_name(filename)
-    proposed_path = base_path + '/' + valid_filename
-    available_filename = storage.get_available_name(proposed_path)
-    return available_filename
-
-class AudioTrack(SortableMixin):
-    class Meta:
-        ordering = ['track_order']
-
-    upload = models.FileField(
-        upload_to=audiotrack_upload_path,
-        max_length=1024,
-        validators=[validate_audio],
-        help_text="mp3 format only")
-    title = models.CharField(max_length=512)
-    modified = models.DateTimeField(auto_now=True)
-    created = models.DateTimeField(auto_now_add=True)
-    album = SortableForeignKey(AudioAlbum, on_delete=models.CASCADE)
-    track_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
-
-    def __str__(self):
-        if self.upload.name is not None:
-            return self.upload.name.split('/')[-1]
-
-@receiver(models.signals.pre_save, sender=AudioTrack)
-def update_album_size(sender, instance, **kwargs):
-    """Update album size calculation after each time a track
-    is saved or updated.
-    """
-    sum_size = 0
-    try:
-        new_track_size = instance.upload.size
-    except FileNotFoundError:
-        new_track_size = 0
-    sum_size += new_track_size
-    existing_tracks = instance.album.audiotrack_set.all()
-    for track in existing_tracks:
-        try:
-            track_size = track.upload.size
-        except FileNotFoundError:
-            track_size = 0
-        sum_size += track_size
-    instance.album.size = sum_size
-    instance.album.save()
-
-
-@receiver(models.signals.post_delete, sender=AudioTrack)
-def auto_delete_track_on_delete(sender, instance, **kwargs):
-    """Deletes file from filesystem
-    when corresponding `Upload` object is deleted.
-    """
-    if instance.upload:
-        if os.path.isfile(instance.upload.path):
-            os.remove(instance.upload.path)
-
-    # AND update album total size
-    update_album_size(sender, instance, **kwargs)
 
 # Delete file from server if Hitchcock entry is deleted
 @receiver(models.signals.post_delete, sender=Text)
@@ -431,7 +369,6 @@ def delete_previous_upload(sender, instance, **kwargs):
 @receiver(models.signals.pre_save, sender=Text)
 @receiver(models.signals.pre_save, sender=Video)
 @receiver(models.signals.pre_save, sender=Audio)
-@receiver(models.signals.pre_save, sender=AudioAlbum)
 def update_upload_identifier(sender, instance, **kwargs):
     """Saves a text copy of the ID to a field for searching on"""
     instance.identifier = str(instance.id)

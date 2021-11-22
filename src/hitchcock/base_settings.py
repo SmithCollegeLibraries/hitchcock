@@ -32,7 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'dbbackup',
-    'adminsortable',
+    'adminsortable2',
     'background_task',
     'uploads',
 ]
@@ -74,7 +74,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'hitchcock.wsgi.application'
 
-# For adminsortable https://github.com/alsoicode/django-admin-sortable#configuration
 CSRF_COOKIE_HTTPONLY = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
