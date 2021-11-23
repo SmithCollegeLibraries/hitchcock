@@ -15,9 +15,9 @@ def validate_video(field):
 
 def validate_audio(field):
     ext = os.path.splitext(field.name)[-1]
-    valid_extensions = ['.mp3', '.mpeg3', '.wav']
+    valid_extensions = ['.mp3', '.mpeg3', '.m4a', '.wav']
     if not ext.lower() in valid_extensions:
-        raise ValidationError('Unsupported file extension. Must be one of %s.' % ', '.join(mylist))
+        raise ValidationError('Unsupported file extension. Must be one of %s.' % ', '.join(valid_extensions))
 
 def validate_captions(field):
     ext = os.path.splitext(field.name)[-1]

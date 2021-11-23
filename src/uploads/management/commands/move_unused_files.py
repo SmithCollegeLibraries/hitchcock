@@ -13,7 +13,7 @@ from uploads.models import Text, Audio, Video, VttTrack
 
 UNUSED = 'unused'
 MODELS_TO_PROCESS = [Text, Audio, Video, VttTrack]
-EXTENSIONS = ['.mp3', '.mp4', '.mpeg3', '.mpeg4', '.wav', '.vtt', '.pdf']
+EXTENSIONS = ['.mp3', '.mpeg3', '.mpeg4', '.mp4', '.m4a', '.wav', '.vtt', '.pdf']
 
 
 class Command(BaseCommand):

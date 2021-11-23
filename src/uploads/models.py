@@ -119,14 +119,14 @@ class Video(Upload):
         validators=[validate_video],
         help_text="mp4 format only")
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
-    lock_panopto_session_id = models.BooleanField(default=False)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
+    lock_panopto_session_id = models.BooleanField(default=False)
     tracker = FieldTracker()
 
     @property
     def url(self):
         if self.created is not None:
-            return settings.BASE_URL + "/videos/%s" % self.id
+            return settings.BASE_URL + "/video/%s" % self.id
         else:
             return None
 
@@ -230,13 +230,13 @@ class VttTrack(models.Model):
         else:
             return None
 
-# Audio i.e. mp3
+# Audio i.e. mp3, m4a, or wav
 class Audio(Upload):
     upload = models.FileField(
         upload_to=settings.AV_SUBDIR_NAME + 'audio/',
         max_length=1024,
         validators=[validate_audio],
-        help_text="mp3 or wav format only")
+        help_text="mp3, m4a or wav")
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
