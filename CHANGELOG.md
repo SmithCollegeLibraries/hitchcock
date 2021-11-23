@@ -21,6 +21,9 @@ Support for VTT captions
   (if one exists) is tagged #deleted-from-hitchcock
 - Notes and filenames are now searchable
 
+### Other changes
+- Audio, video and text uploads now show separately in the admin interface.
+
 ## [1.6.0] - 2021-11-03
 Version to allow import from older Panopto sessions
 

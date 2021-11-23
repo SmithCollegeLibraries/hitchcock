@@ -256,7 +256,7 @@ class MissingEReservesRecordFilter(admin.SimpleListFilter):
         if self.value() == 'Filled':
             return Upload.objects.filter(ereserves_record_url__isnull=False)
 
-# @admin.register(Upload)
+@admin.register(Upload)
 class UploadParentAdmin(PolymorphicParentModelAdmin):
     """ The parent model admin """
     base_model = Upload  # Optional, explicitly set here.

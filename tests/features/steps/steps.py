@@ -57,12 +57,8 @@ def setp_imp(context, object_type):
     base_url = context.target['base_url']
 
     # Go to add upload page
-    driver.get(base_url + '/admin/uploads/upload/add/')
-    assert "Add upload" in driver.title, "Upload add page title is wrong"
-    radio_item = driver.find_element_by_xpath(
-            "//*[contains(text(),'%s')]/input" % object_type)
-    radio_item.click()
-    radio_item.submit()
+    driver.get(base_url + f'/admin/uploads/{object_type}/add/')
+    assert f"Add {object_type}" in driver.title, "Upload add page title is wrong"
     # Fill out the form and submit it
     unique_string = time.time()
     assert "Add %s" % object_type in driver.title, \

@@ -61,6 +61,7 @@ class Upload(PolymorphicModel):
         permissions = [
             ("view_inventory", "Can view non-staff inventory of materials (for faculty)"),
         ]
+        verbose_name_plural = "Uploads (all types)"
 
 ### Text i.e. pdf ###
 def text_upload_path(instance, filename):
@@ -126,7 +127,7 @@ class Video(Upload):
     @property
     def url(self):
         if self.created is not None:
-            return settings.BASE_URL + "/video/%s" % self.id
+            return settings.BASE_URL + "/videos/%s" % self.id
         else:
             return None
 
