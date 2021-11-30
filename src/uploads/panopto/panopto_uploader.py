@@ -21,9 +21,8 @@ MANIFEST_FILE_NAME = settings.PANOPTO_UPLOAD_MANIFEST_TEMPLATES + 'upload_manife
 
 class PanoptoUploader:
     def __init__(self, server, ssl_verify, oauth2):
-        '''
-        Constructor of uploader instance.
-        This goes through authorization step of the target server.
+        '''Constructor of uploader instance. This goes through
+        authorization step of the target server.
         '''
         self.server = server
         self.ssl_verify = ssl_verify
@@ -39,11 +38,11 @@ class PanoptoUploader:
         self.__setup_or_refresh_access_token()
 
     def __setup_or_refresh_access_token(self):
-        '''
-        This method invokes OAuth2 Authorization Code Grant authorization flow.
-        It goes through browser UI for the first time.
-        It refreshes the access token after that and no user interfaction is requetsed.
-        This is called at the initialization of the class, as well as when 401 (Unaurhotized) is returend.
+        '''This method invokes OAuth2 Authorization Code Grant
+        authorization flow. It goes through browser UI for the first time.
+        It refreshes the access token after that and no user interfaction
+        is requetsed. This is called at the initialization of the class,
+        as well as when 401 (Unaurhotized) is returend.
         '''
         access_token = self.oauth2.get_access_token_authorization_code_grant()
         self.requests_session.headers.update({'Authorization': 'Bearer ' + access_token})

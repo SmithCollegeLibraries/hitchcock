@@ -13,6 +13,16 @@ from .panopto.panopto_oauth2 import PanoptoOAuth2
 from .tasks import upload_to_panopto
 from .validators import validate_video, validate_audio, validate_text, validate_barcode, validate_captions
 
+
+def create_panopto_requests_session(skip_verify=False):
+    oauth2 = PanoptoOAuth2(settings.PANOPTO_SERVER, settings.PANOPTO_CLIENT_ID, settings.PANOPTO_CLIENT_SECRET, not skip_verify, settings.PANOPTO_AUTH_CACHE_FILE_PATH)
+    requests_session = requests.Session()
+    requests_session.verify = not skip_verify
+    access_token = oauth2.get_access_token_authorization_code_grant()
+    requests_session.headers.update({'Authorization': 'Bearer ' + access_token})
+    return requests_session
+
+
 class Upload(PolymorphicModel):
     """ Generic "Upload" model for subclassing to the content specific models.
     """
@@ -48,11 +58,6 @@ class Upload(PolymorphicModel):
         Into this: 97070806
         """
         return self.identifier.split('-')[0]
-    # @property
-    # def size(self):
-    #     """Return size in MB
-    #     """
-    #     return '%0.2fMB' % (self.upload.size/1000000)
 
     def __str__(self):
         return self.title
@@ -196,19 +201,8 @@ class VttTrack(models.Model):
     vtt_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
     tracker = FieldTracker()
 
-    def upload_captions(self, skip_verify=False):
+    def upload_captions(self):
         '''Upload captions using API request and return response object.'''
-        self.oauth2 = PanoptoOAuth2(
-            settings.PANOPTO_SERVER,
-            settings.PANOPTO_CLIENT_ID,
-            settings.PANOPTO_CLIENT_SECRET,
-            not skip_verify,
-            settings.PANOPTO_AUTH_CACHE_FILE_PATH,
-        )
-        self.requests_session = requests.Session()
-        self.requests_session.verify = not skip_verify
-        self.access_token = self.oauth2.get_access_token_authorization_code_grant()
-        self.requests_session.headers.update({'Authorization': 'Bearer ' + self.access_token})
 
         panopto_session_id = self.video.panopto_session_id
         # Only try to upload captions if there's a session id to attach it to
@@ -217,7 +211,7 @@ class VttTrack(models.Model):
             url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/sessions/{panopto_session_id}/captions'
             files = {'file': (filename, self.upload.file.open('rb').read())}
             data = {'language': self.language}
-            response = self.requests_session.post(url, data=data, files=files)
+            response = requests_session.post(url, data=data, files=files)
             return response
 
     def __str__(self):
@@ -321,25 +315,18 @@ def tag_panopto_session_on_delete(sender, instance, skip_verify=False, **kwargs)
     deletion of the upload in Hitchcock.
     """
     if instance.panopto_session_id:
-        oauth2 = PanoptoOAuth2(
-            settings.PANOPTO_SERVER,
-            settings.PANOPTO_CLIENT_ID,
-            settings.PANOPTO_CLIENT_SECRET,
-            not skip_verify,
-            settings.PANOPTO_AUTH_CACHE_FILE_PATH,
-        )
-        requests_session = requests.Session()
-        requests_session.verify = not skip_verify
-        access_token = oauth2.get_access_token_authorization_code_grant()
-        requests_session.headers.update({'Authorization': 'Bearer ' + access_token})
-        url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/sessions/{instance.panopto_session_id}/tags'
+        requests_session = create_panopto_requests_session()
 
-        existing_tags_json = requests_session.get(url).json()
-        print(existing_tags_json)
-        tags = [t["Content"] for t in existing_tags_json]
+        url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/sessions/{instance.panopto_session_id}/tags'
+        existing_tags = requests_session.get(url)
+        # If the session has been deleted, this will return an error,
+        # in which case we should not be adding another tag.
+        if not existing_tags.ok:
+            return existing_tags
+        else:
+            tags = [t["Content"] for t in existing_tags.json()]
         tags.append('deleted-from-hitchcock')
         data = {'Tags': tags}
-        print(data)
         response = requests_session.put(url, data=data)
         return response
 
@@ -362,7 +349,6 @@ def delete_previous_upload(sender, instance, **kwargs):
     deletes the old file.
     """
     previous_upload = instance.tracker.previous('upload')
-    print(previous_upload)
     if previous_upload:
         if instance.upload.path != previous_upload.path:
             os.remove(instance.tracker.previous('upload').path)
