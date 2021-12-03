@@ -12,6 +12,9 @@ from polymorphic.models import PolymorphicModel
 from .panopto.panopto_oauth2 import PanoptoOAuth2
 from .validators import validate_video, validate_audio, validate_text, validate_barcode, validate_captions
 
+# Obsolete; here for migrations to work
+def text_upload_path(instance, filename):
+    return ''
 
 def create_panopto_requests_session(skip_verify=False):
     oauth2 = PanoptoOAuth2(settings.PANOPTO_SERVER, settings.PANOPTO_CLIENT_ID, settings.PANOPTO_CLIENT_SECRET, not skip_verify, settings.PANOPTO_AUTH_CACHE_FILE_PATH)
