@@ -4,7 +4,7 @@ from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicI
 from adminsortable2.admin import SortableInlineAdminMixin
 from django.utils.safestring import mark_safe
 from .models import Upload, Video, Audio, Text, VttTrack, SiteSetting
-from .models import AudioPlaylist, AudioPlaylistLink, VideoPlaylist, VideoPlaylistLink
+from .models import AudioPlaylist, VideoPlaylist
 from django.utils.html import format_html
 from . import tasks
 from django import forms
@@ -37,7 +37,7 @@ def queue_for_processing(modeladmin, request, queryset):
         item.processing_status="Added to queue, waiting for file to be uploaded to Panopto"
         item.queued_for_processing=True
         item.save()
-queue_for_processing.short_description = "(re)Process selected items"
+queue_for_processing.short_description = "(Re)process selected items"
 
 class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
@@ -74,30 +74,38 @@ class VttTrackInline(admin.TabularInline):
 class AudioInline(SortableInlineAdminMixin, admin.TabularInline):
     # We use the juction model specified on AudioPlaylist.
     # https://django-admin-sortable2.readthedocs.io/en/latest/usage.html
-    model = AudioPlaylist.audio.through
+    model = AudioPlaylist.av.through
+
+    # This is necessary because if you allow the user to change the
+    # av file in the dropdown, the delete isn't triggered so it
+    # doesn't get taken off the playlist in Panopto
+    def has_change_permission(self, request, obj):
+        return False
 
 class VideoInline(SortableInlineAdminMixin, admin.TabularInline):
     # We use the juction model specified on VideoPlaylist.
     # https://django-admin-sortable2.readthedocs.io/en/latest/usage.html
-    model = VideoPlaylist.video.through
+    model = VideoPlaylist.av.through
+
+    # This is necessary because if you allow the user to change the
+    # av file in the dropdown, the delete isn't triggered so it
+    # doesn't get taken off the playlist in Panopto
+    def has_change_permission(self, request, obj):
+        return False
 
 class VideoAdminForm(forms.ModelForm):
     upload_to_panopto = forms.BooleanField(required=False)
 
     def save(self, commit=True):
         upload_to_panopto = self.cleaned_data.get('upload_to_panopto', None)
-
         # Get the form instance so I can write to its fields
-        instance = super(VideoAdminForm, self).save(commit=commit)
-
+        instance = super().save(commit=commit)
         if upload_to_panopto is True:
             tasks.upload_to_panopto(str(instance.id))
             instance.queued_for_processing = True
             instance.processing_status = "Added to queue, waiting for file to be uploaded to Panopto"
-
         if commit:
             instance.save()
-
         return instance
 
     class Meta:
@@ -109,18 +117,14 @@ class AudioAdminForm(forms.ModelForm):
 
     def save(self, commit=True):
         upload_to_panopto = self.cleaned_data.get('upload_to_panopto', None)
-
         # Get the form instance so I can write to its fields
         instance = super(AudioAdminForm, self).save(commit=commit)
-
         if upload_to_panopto is True:
             tasks.upload_to_panopto(str(instance.id))
             instance.queued_for_processing = True
             instance.processing_status = "Added to queue, waiting for file to be uploaded to Panopto"
-
         if commit:
             instance.save()
-
         return instance
 
     class Meta:
@@ -232,6 +236,22 @@ class AudioPlaylistAdmin(admin.ModelAdmin):
     readonly_fields = ('panopto_playlist_id',)
     list_filter = ('title',)
     inlines = [AudioInline]
+
+    # Change the saving behavior so that the inline playlist links
+    # get saved *before* the playlist itself.
+    # https://stackoverflow.com/a/35140131/2569052
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:  # Call super method if object has no primary key
+            super().save_model(request, obj, form, change)
+        else:
+            pass  # Don't actually save the parent instance
+
+    def save_related(self, request, form, formsets, change):
+        form.save_m2m()
+        for formset in formsets:
+            self.save_formset(request, form, formset, change=change)
+        super().save_model(request, form.instance, form, change)
+
 
 @admin.register(VideoPlaylist)
 class VideoPlaylistAdmin(admin.ModelAdmin):

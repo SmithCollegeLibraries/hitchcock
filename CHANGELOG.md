@@ -4,22 +4,23 @@
 Support for VTT captions
 
 ### New functions
-- Support for attaching VTT tracks (for subtitles and captions) to a video
+- VTT tracks (for subtitles and captions) can now be attached to a video
   upload (VTT tracks are automatically uploaded to Panopto if there is a
-  Panopto session)
+  Panopto session).
 - Added management command `move_unused_files` which allows the user to locate
   all unused files and keep them in a separate directory
 - Added management command `rename_upload` which allows the user to provide
   a new filename for a poorly labeled file, or to move a file which has found
   its way to the wrong place
+- Added support for video and audio playlists, which are mirrored on Panopto.
 
 ### Improvements
-- Upgraded Django to 3.2.9
+- Django version 3.2.9 is now used.
 - When the file for an audio, video, text, or VTT track is changed, the old
-  version of the file is now automatically deleted
+  version of the file is now automatically deleted.
 - When a file is deleted from Hitchcock, the corresponding Panopto session
-  (if one exists) is tagged #deleted-from-hitchcock
-- Notes and filenames are now searchable
+  (if one exists) is tagged #deleted-from-hitchcock.
+- Notes and filenames are now searchable.
 
 ### Other changes
 - Audio, video and text uploads now show separately in the admin interface.

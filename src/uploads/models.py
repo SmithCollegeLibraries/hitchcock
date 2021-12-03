@@ -10,7 +10,6 @@ from django.conf import settings
 from model_utils import FieldTracker
 from polymorphic.models import PolymorphicModel
 from .panopto.panopto_oauth2 import PanoptoOAuth2
-from .tasks import upload_to_panopto
 from .validators import validate_video, validate_audio, validate_text, validate_barcode, validate_captions
 
 
@@ -32,7 +31,7 @@ class Upload(PolymorphicModel):
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     identifier = models.CharField(max_length=1024, blank=True, null=True)
-    title = models.CharField(max_length=1024)
+    title = models.CharField(max_length=1024, unique=True)
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
     barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode])
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
@@ -201,9 +200,10 @@ class VttTrack(models.Model):
     vtt_order = models.PositiveIntegerField(default=0, editable=False, db_index=True)
     tracker = FieldTracker()
 
-    def upload_captions(self):
+    def upload_captions(self, requests_session=None):
         '''Upload captions using API request and return response object.'''
-
+        if not requests_session:
+            requests_session = create_panopto_requests_session()
         panopto_session_id = self.video.panopto_session_id
         # Only try to upload captions if there's a session id to attach it to
         if panopto_session_id:
@@ -244,43 +244,129 @@ class Audio(Upload):
         else:
             return None
 
-class AudioPlaylist(models.Model):
+
+class Playlist(PolymorphicModel):
     title = models.CharField(max_length=512)
     panopto_playlist_id = models.CharField(max_length=256, blank=True, null=True)
-    audio = models.ManyToManyField(Audio, through='AudioPlaylistLink')
+
+    class Meta:
+        abstract = True
 
     def __str__(self):
-        return self.title if self.title else 'Unnamed Audio Playlist'
+        return self.title if self.title else 'Unnamed Playlist'
 
-class AudioPlaylistLink(models.Model):
+    def delete_panopto_playlist(self, requests_session=None):
+        '''Delete Panopto playlist associated with playlist in Hitchcock.'''
+        if not requests_session:
+            requests_session = create_panopto_requests_session()
+        panopto_playlist_id = self.panopto_playlist_id
+        url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/playlists/{panopto_playlist_id}'
+        response = requests_session.delete(url)
+        print("Deleting Panopto playlist")
+        print(response)
+        return response
+
+    def update_playlist_details(self, requests_session=None):
+        '''Update the title of a playlist on Panopto'''
+        if self.panopto_playlist_id:
+            if not requests_session:
+                requests_session = create_panopto_requests_session()
+            url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/playlists/{self.panopto_playlist_id}'
+            data = {
+                'Name': self.title,
+            }
+            response = requests_session.put(url, data=data)
+            return response
+        # This method shouldn't be called if there is no playlist ID
+        else:
+            return
+
+
+class AudioPlaylist(Playlist):
+    tracker = FieldTracker()
+    av = models.ManyToManyField(Audio, through='AudioPlaylistLink')
+
+    def refresh_playlist_items(self, requests_session=None):
+        '''Removes all the items from the playlist and adds them
+        all back again in the proper order.
+        '''
+        # Delete everything from playlist
+        for i in AudioPlaylistLink.objects.filter(playlist=self):
+            i.delete_from_panopto_playlist(requests_session=requests_session)
+        # Re-add everything to playlist
+        for i in AudioPlaylistLink.objects.filter(playlist=self).order_by('playlist_order'):
+            i.add_to_panopto_playlist(requests_session=requests_session)
+
+
+class VideoPlaylist(Playlist):
+    tracker = FieldTracker()
+    av = models.ManyToManyField(Video, through='VideoPlaylistLink')
+
+    def refresh_playlist_items(self, requests_session=None):
+        '''Removes all the items from the playlist and adds them
+        all back again in the proper order.
+        '''
+        # Delete everything from playlist
+        for i in VideoPlaylistLink.objects.filter(playlist=self):
+            i.delete_from_panopto_playlist(requests_session=requests_session)
+        # Re-add everything to playlist
+        for i in VideoPlaylistLink.objects.filter(playlist=self):
+            i.add_to_panopto_playlist(requests_session=requests_session)
+
+
+class PlaylistLink(PolymorphicModel):
+    playlist_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return f'{str(self.playlist)} - {str(self.playlist_order)}. {str(self.av)}'
+
+    def add_to_panopto_playlist(self, requests_session=None):
+        '''Add to playlist using API request.'''
+        if not requests_session:
+            requests_session = create_panopto_requests_session()
+        panopto_playlist_id = self.playlist.panopto_playlist_id
+        panopto_session_id = self.av.panopto_session_id
+        # Only try to add to playlist if there's a playlist and a session
+        if panopto_playlist_id and panopto_session_id:
+            url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/playlists/{panopto_playlist_id}/sessions'
+            data = {'SessionId': self.av.panopto_session_id}
+            response = requests_session.put(url, data=data)
+            return response
+        else:
+            print("Didn't add to playlist -- at least yet")
+
+    def delete_from_panopto_playlist(self, requests_session=None):
+        '''Delete from playlist using API request.'''
+        if not requests_session:
+            requests_session = create_panopto_requests_session()
+        panopto_playlist_id = self.playlist.panopto_playlist_id
+        panopto_session_id = self.av.panopto_session_id
+        url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/playlists/{panopto_playlist_id}/sessions/{panopto_session_id}'
+        response = requests_session.delete(url)
+        return response
+
+
+class AudioPlaylistLink(PlaylistLink):
     class Meta:
         ordering = ['playlist_order']
-        unique_together = ['audio', 'playlist']
-    audio = models.ForeignKey(Audio, on_delete=models.CASCADE)
+        unique_together = ['av', 'playlist']
+
+    av = models.ForeignKey(Audio, on_delete=models.CASCADE)
     playlist = models.ForeignKey(AudioPlaylist, on_delete=models.CASCADE)
-    playlist_order = models.PositiveIntegerField(default=0)
+    tracker = FieldTracker()
 
-    def __str__(self):
-        return f'{str(self.playlist)} - {str(self.playlist_order)}. {str(self.audio)}'
 
-class VideoPlaylist(models.Model):
-    title = models.CharField(max_length=512)
-    panopto_playlist_id = models.CharField(max_length=256, blank=True, null=True)
-    video = models.ManyToManyField(Video, through='VideoPlaylistLink')
-
-    def __str__(self):
-        return self.title if self.title else 'Unnamed Video Playlist'
-
-class VideoPlaylistLink(models.Model):
+class VideoPlaylistLink(PlaylistLink):
     class Meta:
         ordering = ['playlist_order']
-        unique_together = ['video', 'playlist']
-    video = models.ForeignKey(Video, on_delete=models.CASCADE)
-    playlist = models.ForeignKey(VideoPlaylist, on_delete=models.CASCADE)
-    playlist_order = models.PositiveIntegerField(default=0)
+        unique_together = ['av', 'playlist']
 
-    def __str__(self):
-        return f'{str(self.playlist)} - {str(self.playlist_order)}. {str(self.video)}'
+    av = models.ForeignKey(Video, on_delete=models.CASCADE)
+    playlist = models.ForeignKey(VideoPlaylist, on_delete=models.CASCADE)
+    tracker = FieldTracker()
 
 
 class SiteSetting(models.Model):
@@ -307,6 +393,20 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
         if os.path.isfile(instance.upload.path):
             os.remove(instance.upload.path)
 
+# Delete old file if the file has changed
+@receiver(models.signals.post_save, sender=Text)
+@receiver(models.signals.post_save, sender=Video)
+@receiver(models.signals.post_save, sender=Audio)
+@receiver(models.signals.post_save, sender=VttTrack)
+def delete_previous_upload(sender, instance, **kwargs):
+    """Checks the old file against the new file, and if it has
+    changed, deletes the old file.
+    """
+    previous_upload = instance.tracker.previous('upload')
+    if previous_upload:
+        if instance.upload.path != previous_upload.path:
+            os.remove(instance.tracker.previous('upload').path)
+
 # Add tag to Panopto session when Hitchcock entry is deleted
 @receiver(models.signals.post_delete, sender=Video)
 @receiver(models.signals.post_delete, sender=Audio)
@@ -325,10 +425,10 @@ def tag_panopto_session_on_delete(sender, instance, skip_verify=False, **kwargs)
             return existing_tags
         else:
             tags = [t["Content"] for t in existing_tags.json()]
-        tags.append('deleted-from-hitchcock')
-        data = {'Tags': tags}
-        response = requests_session.put(url, data=data)
-        return response
+            tags.append('deleted-from-hitchcock')
+            data = {'Tags': tags}
+            response = requests_session.put(url, data=data)
+            return response
 
 # Calculate size and save it to the parent Upload object
 @receiver(models.signals.pre_save, sender=Text)
@@ -338,20 +438,6 @@ def tag_panopto_session_on_delete(sender, instance, skip_verify=False, **kwargs)
 def update_upload_size(sender, instance, **kwargs):
     """Saves the file size to the Upload model"""
     instance.size = instance.upload.size
-
-# Delete old file if the file has changed
-@receiver(models.signals.post_save, sender=Text)
-@receiver(models.signals.post_save, sender=Video)
-@receiver(models.signals.post_save, sender=Audio)
-@receiver(models.signals.post_save, sender=VttTrack)
-def delete_previous_upload(sender, instance, **kwargs):
-    """Checks the old file against the new file, and if it has changed,
-    deletes the old file.
-    """
-    previous_upload = instance.tracker.previous('upload')
-    if previous_upload:
-        if instance.upload.path != previous_upload.path:
-            os.remove(instance.tracker.previous('upload').path)
 
 @receiver(models.signals.pre_save, sender=Text)
 @receiver(models.signals.pre_save, sender=Video)
@@ -364,3 +450,49 @@ def update_upload_identifier(sender, instance, **kwargs):
 def update_caption_uploads(sender, instance, **kwargs):
     """Adds the captions to the Panopto session"""
     instance.upload_captions()
+
+@receiver(models.signals.post_save, sender=AudioPlaylist)
+@receiver(models.signals.post_save, sender=VideoPlaylist)
+def create_or_refresh_playlist(sender, instance, created, **kwargs):
+    """Removes all the previous items on the playlist, and
+    uploads all the new ones. Every time a playlist is saved,
+    the whole Panopto playlist is recreated from scratch.
+    If the playlist is brand new, first create the playlist.
+    """
+    requests_session = create_panopto_requests_session()
+    if created:
+        url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/playlists'
+        data = {
+            'Name': instance.title,
+            'Description': '',  # Could add a description field later
+            'FolderId': settings.PANOPTO_FOLDER_ID,
+            'Sessions': [],  # We will add the sessions later
+        }
+        response = requests_session.post(url, data=data)
+        instance.panopto_playlist_id = response.json()['Id']
+        instance.save()  # This will trigger the refresh post-save
+    else:
+        # Updates the playlist title on Panopto if necessary
+        if instance.tracker.previous('title') and instance.tracker.previous('title') != instance.title:
+            instance.update_playlist_details(requests_session=requests_session)
+        instance.refresh_playlist_items(requests_session=requests_session)
+
+@receiver(models.signals.post_delete, sender=AudioPlaylist)
+@receiver(models.signals.post_delete, sender=VideoPlaylist)
+def remove_panopto_playlist(sender, instance, **kwargs):
+    """Whenever a playlist is deleted in Hitchcock, the related
+    playlist in Panopto needs to be deleted as well.
+    """
+    instance.delete_panopto_playlist()
+
+@receiver(models.signals.post_delete, sender=AudioPlaylistLink)
+@receiver(models.signals.post_delete, sender=VideoPlaylistLink)
+def remove_deleted_item_from_playlist(sender, instance, **kwargs):
+    """Whenever an audio/video is taken off a playlist, the link
+    between them is deleted. This needs to be reflected in the
+    Panopto playlist as well.
+    """
+    # Don't try to remove from Panopto playlist if the playlist
+    # has already been deleted
+    if instance.playlist is not None:
+        instance.delete_from_panopto_playlist()
