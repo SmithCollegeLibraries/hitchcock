@@ -7,6 +7,7 @@ from hitchcock import settings
 
 from django.core.files import File
 from django.core.management.base import BaseCommand
+from django.utils.crypto import get_random_string
 
 from uploads.models import Text, Audio, Video, VttTrack
 
@@ -51,5 +52,15 @@ class Command(BaseCommand):
                     all_media_files.append(os.path.join(dirpath, n))
 
         for f in all_media_files:
-            if f not in files_in_use:
-                shutil.move(f, os.path.join(settings.MEDIA_ROOT, UNUSED))
+            # Don't move if used, or already in the UNUSED folder
+            if f not in files_in_use and os.path.join(settings.MEDIA_ROOT, UNUSED) not in f:
+                try:
+                    shutil.move(f, os.path.join(settings.MEDIA_ROOT, UNUSED))
+                # If a file with that name already exists, create a new one
+                # with a unique name
+                except shutil.Error as err:
+                    print(err)
+                    filename = os.path.split(f)[1]
+                    bare_filename, extension = os.path.splitext(filename)
+                    new_filename = bare_filename + '_' + get_random_string(6) + extension
+                    shutil.move(f, os.path.join(settings.MEDIA_ROOT, UNUSED, new_filename))
