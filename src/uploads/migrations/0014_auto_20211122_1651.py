@@ -53,10 +53,6 @@ class Migration(migrations.Migration):
                 'unique_together': {('video', 'playlist')},
             },
         ),
-        migrations.RemoveField(
-            model_name='audiotrack',
-            name='album',
-        ),
         migrations.DeleteModel(
             name='AudioAlbum',
         ),
