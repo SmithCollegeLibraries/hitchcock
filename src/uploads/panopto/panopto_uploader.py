@@ -69,7 +69,7 @@ class PanoptoUploader:
         # Throw unhandled cases.
         response.raise_for_status()
 
-    def upload_video(self, file_path, folder_id):
+    def upload_video(self, file_path, folder_id, upload_title=None):
         '''
         Main upload method to go through all required steps.
         '''
@@ -82,7 +82,7 @@ class PanoptoUploader:
         self.__multipart_upload_single_file(upload_target, file_path)
 
         # step 3 - create manifest file and uplaod it
-        self.__create_manifest_for_video(file_path, MANIFEST_FILE_NAME)
+        self.__create_manifest_for_video(file_path, MANIFEST_FILE_NAME, upload_title)
         self.__multipart_upload_single_file(upload_target, MANIFEST_FILE_NAME)
 
         # step 4 - finish the upload
@@ -165,7 +165,7 @@ class PanoptoUploader:
         result = s3.complete_multipart_upload(Bucket = bucket, Key = object_key, UploadId = mpu_id, MultipartUpload = {"Parts": parts})
         print('  -- complete called.')
 
-    def __create_manifest_for_video(self, file_path, manifest_file_name):
+    def __create_manifest_for_video(self, file_path, manifest_file_name, upload_title=None):
         '''
         Create manifest XML file for a single video file, based on template.
         '''
@@ -173,11 +173,17 @@ class PanoptoUploader:
         print('Writing manifest file: {0}'.format(manifest_file_name))
 
         file_name = os.path.basename(file_path)
+        # Use a human-readable title if it's available; otherwise,
+        # just use the filename minus the extension.
+        if upload_title:
+            title = upload_title
+        else:
+            title = os.path.splitext(file_name)[0]
 
         with open(MANIFEST_FILE_TEMPLATE) as fr:
             template = fr.read()
         content = template\
-        .replace('{Title}', file_name)\
+        .replace('{Title}', title)\
         .replace('{Description}', 'This is a video session with the uploaded video file {0}'.format(file_name))\
         .replace('{Filename}', file_name)\
         .replace('{Date}', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f-00:00'))
