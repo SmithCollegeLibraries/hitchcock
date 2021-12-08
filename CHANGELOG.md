@@ -21,6 +21,8 @@ Support for VTT captions
 - When a file is deleted from Hitchcock, the corresponding Panopto session
   (if one exists) is tagged #deleted-from-hitchcock.
 - Notes and filenames are now searchable.
+- Panopto now uses the human-readable title instead of filename as the
+  session title
 
 ### Other changes
 - Audio, video and text uploads now show separately in the admin interface.
