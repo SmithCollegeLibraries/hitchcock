@@ -24,6 +24,7 @@ Support for VTT captions
 
 ### Other changes
 - Audio, video and text uploads now show separately in the admin interface.
+- Titles must now be unique.
 
 ## [1.6.0] - 2021-11-03
 Version to allow import from older Panopto sessions

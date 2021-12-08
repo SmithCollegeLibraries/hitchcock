@@ -34,7 +34,7 @@ class Upload(PolymorphicModel):
     ]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     identifier = models.CharField(max_length=1024, blank=True, null=True)
-    title = models.CharField(max_length=1024)
+    title = models.CharField(max_length=1024, unique=True)
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
     barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode])
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
