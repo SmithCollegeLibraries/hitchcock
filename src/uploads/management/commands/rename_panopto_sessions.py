@@ -1,6 +1,5 @@
 import csv
 import os.path
-import re
 import shutil
 from os import walk
 from hitchcock import settings
@@ -33,8 +32,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Match session names with either an underscore or the .mp4 extension
-        PATTERN = r'.*(_|\.mp4).*'
         # This is the requests session for all API calls
         REQUESTS_SESSION = create_panopto_requests_session()
 
@@ -69,14 +66,10 @@ class Command(BaseCommand):
                 response = REQUESTS_SESSION.get(url)
                 session_metadata = response.json()
                 old_title = session_metadata.get('Name')
-                # If there's an underscore or '.mp4' extension
-                if re.match(PATTERN, old_title) is not None:
+                if old_title != u.title:
                     rename_panopto_session(
                         u.panopto_session_id,
                         old_title,
                         u.title,
                         not options['noconfirmation'],
                     )
-
-            '''Get the Panopto session title'''
-            '''If the title matches the pattern, rename it (possibly asking for confirmation first)'''
