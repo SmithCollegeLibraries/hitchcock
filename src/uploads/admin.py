@@ -230,10 +230,11 @@ class TextAdmin(UploadChildAdmin):
             return ['size_in_mb', 'created', 'modified', 'text_type', 'identifier', 'url', 'queued_for_processing']
 
 @admin.register(AudioPlaylist)
-class AudioPlaylistAdmin(admin.ModelAdmin):
+class AudioPlaylistAdmin(UploadChildAdmin):
     base_model = AudioPlaylist
+    show_in_index = True  # makes child model admin visible in main admin site
     list_display = ('title', 'panopto_playlist_id')
-    readonly_fields = ('panopto_playlist_id',)
+    readonly_fields = ('panopto_playlist_id', 'url')
     list_filter = ('title',)
     inlines = [AudioInline]
 
@@ -254,12 +255,29 @@ class AudioPlaylistAdmin(admin.ModelAdmin):
 
 
 @admin.register(VideoPlaylist)
-class VideoPlaylistAdmin(admin.ModelAdmin):
+class VideoPlaylistAdmin(UploadChildAdmin):
     base_model = VideoPlaylist
+    show_in_index = True  # makes child model admin visible in main admin site
     list_display = ('title', 'panopto_playlist_id')
     readonly_fields = ('panopto_playlist_id',)
     list_filter = ('title',)
     inlines = [VideoInline]
+
+    # Change the saving behavior so that the inline playlist links
+    # get saved *before* the playlist itself.
+    # https://stackoverflow.com/a/35140131/2569052
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:  # Call super method if object has no primary key
+            super().save_model(request, obj, form, change)
+        else:
+            pass  # Don't actually save the parent instance
+
+    def save_related(self, request, form, formsets, change):
+        form.save_m2m()
+        for formset in formsets:
+            self.save_formset(request, form, formset, change=change)
+        super().save_model(request, form.instance, form, change)
+
 
 class MissingEReservesRecordFilter(admin.SimpleListFilter):
     title = "empty e-reserves url"

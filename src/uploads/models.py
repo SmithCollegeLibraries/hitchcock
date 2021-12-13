@@ -94,7 +94,7 @@ class Text(Upload):
         upload_to=text_upload_path,
         max_length=1024,
         validators=[validate_text],
-        help_text="pdf format only"
+        help_text="pdf format only",
     )
     TEXT_TYPES = [
         ('article', 'Article'),
@@ -125,7 +125,8 @@ class Video(Upload):
         upload_to=settings.AV_SUBDIR_NAME + 'video/',
         max_length=1024,
         validators=[validate_video],
-        help_text="mp4 format only")
+        help_text="mp4 format only",
+    )
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
@@ -249,8 +250,12 @@ class Audio(Upload):
 
 
 class Playlist(PolymorphicModel):
-    title = models.CharField(max_length=512)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255, unique=True)
     panopto_playlist_id = models.CharField(max_length=256, blank=True, null=True)
+    modified = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True, null=True)
 
     class Meta:
         abstract = True
@@ -300,6 +305,13 @@ class AudioPlaylist(Playlist):
         for i in AudioPlaylistLink.objects.filter(playlist=self).order_by('playlist_order'):
             i.add_to_panopto_playlist(requests_session=requests_session)
 
+    @property
+    def url(self):
+        if self.created is not None:
+            return settings.BASE_URL + "/audio-playlists/%s" % self.id
+        else:
+            return None
+
 
 class VideoPlaylist(Playlist):
     tracker = FieldTracker()
@@ -315,6 +327,13 @@ class VideoPlaylist(Playlist):
         # Re-add everything to playlist
         for i in VideoPlaylistLink.objects.filter(playlist=self):
             i.add_to_panopto_playlist(requests_session=requests_session)
+
+    @property
+    def url(self):
+        if self.created is not None:
+            return settings.BASE_URL + "/video-playlists/%s" % self.id
+        else:
+            return None
 
 
 class PlaylistLink(PolymorphicModel):

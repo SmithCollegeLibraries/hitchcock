@@ -5,7 +5,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.generic.list import ListView
-from .models import Video, Audio, Text, Upload, SiteSetting
+from .models import Video, Audio, VideoPlaylist, AudioPlaylist, Text, Upload, SiteSetting
 import uuid
 from .panopto import panopto_oauth2
 from html_sanitizer import Sanitizer
@@ -175,28 +175,30 @@ def play_audio(request, pk):
         # return render(request, 'uploads/video-panopto-embed.html', context)
     return render_audio(request, obj)
 
-# def play_audio_album(request, pk):
-#     try:
-#         obj = get_object_or_404(AudioPlaylist, pk=pk)
-#     except ValidationError:
-#         # Not a proper UUID, give a 404 in this case
-#         raise Http404("Invalid identifier")
-#
-#     @staff_view_unpublished
-#     def render_audio_album(request, obj):
-#         wowza_urls_hls = []
-#         for track in obj.audiotrack_set.all():
-#             path_from_av = track.upload.name.replace(settings.AV_SUBDIR_NAME, '')
-#             myurl = settings.WOWZA_ENDPOINT + 'mp3:' + path_from_av + '/playlist.m3u8'
-#             track_info = {
-#                 "url": myurl,
-#                 "title": track.title
-#             }
-#             wowza_urls_hls.append(track_info)
-#         wowza_url_hls = wowza_urls_hls[0]
-#         context = {
-#             'title': obj.title,
-#             'wowza_urls_hls': wowza_urls_hls,
-#         }
-#         return render(request, 'uploads/audio-album-player-theo.html', context)
-#     return render_audio_album(request, obj)
+def play_video_playlist(request, pk):
+    try:
+        obj = get_object_or_404(VideoPlaylist, pk=pk)
+    except ValidationError:
+        # Not a proper UUID, give a 404 in this case
+        raise Http404("Invalid identifier")
+
+    panopto_playlist_id = obj.panopto_playlist_id
+    if panopto_playlist_id is not None:
+        panopto_url = 'https://' + settings.PANOPTO_SERVER + '/Panopto/Pages/Viewer.aspx?pid=' + panopto_playlist_id
+    else:
+        raise Http404("Playlist not found")
+    return redirect(panopto_url)
+
+def play_audio_playlist(request, pk):
+    try:
+        obj = get_object_or_404(AudioPlaylist, pk=pk)
+    except ValidationError:
+        # Not a proper UUID, give a 404 in this case
+        raise Http404("Invalid identifier")
+
+    panopto_playlist_id = obj.panopto_playlist_id
+    if panopto_playlist_id is not None:
+        panopto_url = 'https://' + settings.PANOPTO_SERVER + '/Panopto/Pages/Viewer.aspx?pid=' + panopto_playlist_id
+    else:
+        raise Http404("Playlist not found")
+    return redirect(panopto_url)
