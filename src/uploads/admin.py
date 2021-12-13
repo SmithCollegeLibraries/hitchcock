@@ -1,16 +1,16 @@
+import copy
+
+from django import forms
 from django.contrib import admin
+from django.utils.html import format_html, strip_tags
+from django.utils.safestring import mark_safe
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
 from polymorphic.admin import PolymorphicInlineSupportMixin, StackedPolymorphicInline
 from adminsortable2.admin import SortableInlineAdminMixin
-from django.utils.safestring import mark_safe
+
+from . import tasks
 from .models import Upload, Video, Audio, Text, VttTrack, SiteSetting
 from .models import AudioPlaylist, VideoPlaylist
-from django.utils.html import format_html
-from . import tasks
-from django import forms
-import copy
-from django.utils.html import strip_tags
-
 
 # This is a hacky way to set text in the admin site, but it works...
 # https://stackoverflow.com/questions/4938491/django-admin-change-header-django-administration-text
@@ -75,23 +75,27 @@ class AudioInline(SortableInlineAdminMixin, admin.TabularInline):
     # We use the juction model specified on AudioPlaylist.
     # https://django-admin-sortable2.readthedocs.io/en/latest/usage.html
     model = AudioPlaylist.av.through
+    # Autocomplete: https://stackoverflow.com/a/67905237/2569052
+    autocomplete_fields = ['av']
 
     # This is necessary because if you allow the user to change the
     # av file in the dropdown, the delete isn't triggered so it
     # doesn't get taken off the playlist in Panopto
-    def has_change_permission(self, request, obj):
-        return False
+    # def has_change_permission(self, request, obj):
+    #     return False
 
 class VideoInline(SortableInlineAdminMixin, admin.TabularInline):
     # We use the juction model specified on VideoPlaylist.
     # https://django-admin-sortable2.readthedocs.io/en/latest/usage.html
     model = VideoPlaylist.av.through
+    # Autocomplete: https://stackoverflow.com/a/67905237/2569052
+    autocomplete_fields = ['av']
 
     # This is necessary because if you allow the user to change the
     # av file in the dropdown, the delete isn't triggered so it
     # doesn't get taken off the playlist in Panopto
-    def has_change_permission(self, request, obj):
-        return False
+    # def has_change_permission(self, request, obj):
+    #     return False
 
 class VideoAdminForm(forms.ModelForm):
     upload_to_panopto = forms.BooleanField(required=False)
@@ -201,6 +205,7 @@ class VideoAdmin(PanoptoUploadAdmin):
     form = VideoAdminForm
     base_model = Video  # Explicitly set here!
     show_in_index = True  # makes child model admin visible in main admin site
+    search_fields = ['title']
     inlines = [VttTrackInline]
 
 @admin.register(Audio)
@@ -208,6 +213,7 @@ class AudioAdmin(PanoptoUploadAdmin):
     form = AudioAdminForm
     base_model = Audio  # Explicitly set here!
     show_in_index = True  # makes child model admin visible in main admin site
+    search_fields = ['title']
     # readonly_fields = ('size_in_mb', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
 
 @admin.register(Text)

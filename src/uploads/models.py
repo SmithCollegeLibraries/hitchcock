@@ -292,7 +292,11 @@ class Playlist(PolymorphicModel):
 
 class AudioPlaylist(Playlist):
     tracker = FieldTracker()
-    av = models.ManyToManyField(Audio, through='AudioPlaylistLink')
+    av = models.ManyToManyField(
+        Audio,
+        through='AudioPlaylistLink',
+        related_name='audio_playlists',
+    )
 
     def refresh_playlist_items(self, requests_session=None):
         '''Removes all the items from the playlist and adds them
@@ -315,7 +319,11 @@ class AudioPlaylist(Playlist):
 
 class VideoPlaylist(Playlist):
     tracker = FieldTracker()
-    av = models.ManyToManyField(Video, through='VideoPlaylistLink')
+    av = models.ManyToManyField(
+        Video,
+        through='VideoPlaylistLink',
+        related_name='video_playlists',
+    )
 
     def refresh_playlist_items(self, requests_session=None):
         '''Removes all the items from the playlist and adds them
