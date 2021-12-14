@@ -274,21 +274,6 @@ class Playlist(PolymorphicModel):
         print(response)
         return response
 
-    def update_playlist_details(self, requests_session=None):
-        '''Update the title of a playlist on Panopto'''
-        if self.panopto_playlist_id:
-            if not requests_session:
-                requests_session = create_panopto_requests_session()
-            url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/playlists/{self.panopto_playlist_id}'
-            data = {
-                'Name': self.title,
-            }
-            response = requests_session.put(url, data=data)
-            return response
-        # This method shouldn't be called if there is no playlist ID
-        else:
-            return
-
 
 class AudioPlaylist(Playlist):
     tracker = FieldTracker()
@@ -299,14 +284,9 @@ class AudioPlaylist(Playlist):
     )
 
     def refresh_playlist_items(self, requests_session=None):
-        '''Removes all the items from the playlist and adds them
-        all back again in the proper order.
-        '''
-        # Delete everything from playlist
-        for i in AudioPlaylistLink.objects.filter(playlist=self):
-            i.delete_from_panopto_playlist(requests_session=requests_session)
-        # Re-add everything to playlist
+        '''Adds all playlist items from scratch in the proper order.'''
         for i in AudioPlaylistLink.objects.filter(playlist=self).order_by('playlist_order'):
+            print(i)
             i.add_to_panopto_playlist(requests_session=requests_session)
 
     @property
@@ -326,13 +306,7 @@ class VideoPlaylist(Playlist):
     )
 
     def refresh_playlist_items(self, requests_session=None):
-        '''Removes all the items from the playlist and adds them
-        all back again in the proper order.
-        '''
-        # Delete everything from playlist
-        for i in VideoPlaylistLink.objects.filter(playlist=self):
-            i.delete_from_panopto_playlist(requests_session=requests_session)
-        # Re-add everything to playlist
+        '''Adds all playlist items from scratch in the proper order.'''
         for i in VideoPlaylistLink.objects.filter(playlist=self):
             i.add_to_panopto_playlist(requests_session=requests_session)
 
@@ -481,31 +455,35 @@ def update_caption_uploads(sender, instance, **kwargs):
     """Adds the captions to the Panopto session"""
     instance.upload_captions()
 
-@receiver(models.signals.post_save, sender=AudioPlaylist)
-@receiver(models.signals.post_save, sender=VideoPlaylist)
-def create_or_refresh_playlist(sender, instance, created, **kwargs):
-    """Removes all the previous items on the playlist, and
-    uploads all the new ones. Every time a playlist is saved,
-    the whole Panopto playlist is recreated from scratch.
-    If the playlist is brand new, first create the playlist.
+@receiver(models.signals.pre_save, sender=AudioPlaylist)
+@receiver(models.signals.pre_save, sender=VideoPlaylist)
+def create_panopto_playlist(sender, instance, **kwargs):
+    """If the playlist is brand new, first create the playlist.
+    Otherwise, delete the existing playlist, which may have items
+    on it that have been taken off.
     """
     requests_session = create_panopto_requests_session()
-    if created:
-        url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/playlists'
-        data = {
-            'Name': instance.title,
-            'Description': '',  # Could add a description field later
-            'FolderId': settings.PANOPTO_FOLDER_ID,
-            'Sessions': [],  # We will add the sessions later
-        }
-        response = requests_session.post(url, data=data)
-        instance.panopto_playlist_id = response.json()['Id']
-        instance.save()  # This will trigger the refresh post-save
-    else:
-        # Updates the playlist title on Panopto if necessary
-        if instance.tracker.previous('title') and instance.tracker.previous('title') != instance.title:
-            instance.update_playlist_details(requests_session=requests_session)
-        instance.refresh_playlist_items(requests_session=requests_session)
+    # If it's not a brand new playlist, first delete the old playlist
+    if instance.panopto_playlist_id:
+        instance.delete_panopto_playlist(requests_session=requests_session)
+
+    # Now create a new playlist on Panopto
+    url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/playlists'
+    data = {
+        'Name': instance.title,
+        'Description': instance.notes,
+        'FolderId': settings.PANOPTO_FOLDER_ID,
+        'Sessions': [],  # We will add the sessions later
+    }
+    response = requests_session.post(url, data=data)
+    instance.panopto_playlist_id = response.json()['Id']
+
+@receiver(models.signals.post_save, sender=AudioPlaylist)
+@receiver(models.signals.post_save, sender=VideoPlaylist)
+def refresh_playlist(sender, instance, **kwargs):
+    """Add all the related playlist items on save."""
+    instance.refresh_playlist_items()
+
 
 @receiver(models.signals.post_delete, sender=AudioPlaylist)
 @receiver(models.signals.post_delete, sender=VideoPlaylist)

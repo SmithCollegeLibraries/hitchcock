@@ -78,24 +78,12 @@ class AudioInline(SortableInlineAdminMixin, admin.TabularInline):
     # Autocomplete: https://stackoverflow.com/a/67905237/2569052
     autocomplete_fields = ['av']
 
-    # This is necessary because if you allow the user to change the
-    # av file in the dropdown, the delete isn't triggered so it
-    # doesn't get taken off the playlist in Panopto
-    # def has_change_permission(self, request, obj):
-    #     return False
-
 class VideoInline(SortableInlineAdminMixin, admin.TabularInline):
     # We use the juction model specified on VideoPlaylist.
     # https://django-admin-sortable2.readthedocs.io/en/latest/usage.html
     model = VideoPlaylist.av.through
     # Autocomplete: https://stackoverflow.com/a/67905237/2569052
     autocomplete_fields = ['av']
-
-    # This is necessary because if you allow the user to change the
-    # av file in the dropdown, the delete isn't triggered so it
-    # doesn't get taken off the playlist in Panopto
-    # def has_change_permission(self, request, obj):
-    #     return False
 
 class VideoAdminForm(forms.ModelForm):
     upload_to_panopto = forms.BooleanField(required=False)

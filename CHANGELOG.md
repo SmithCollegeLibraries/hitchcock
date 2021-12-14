@@ -8,7 +8,7 @@ Django upgrade; captions; playlists; cleanup tools
   upload (VTT tracks are automatically uploaded to Panopto if there is a
   Panopto session).
 - Added management command `move_unused_files` which allows the user to locate
-  all unused files and keep them in a separate directory.
+  all unused files and move them to a separate directory.
 - Added management command `rename_upload` which allows the user to provide
   a new filename for a poorly labeled file, or to move a file which has found
   its way to the wrong place.
@@ -23,12 +23,12 @@ Django upgrade; captions; playlists; cleanup tools
   (if one exists) is tagged #deleted-from-hitchcock.
 - Audio, video and text uploads can now be viewed separately in the admin
   interface.
-- Panopto now uses the human-readable title instead of filename as the
-  session title.
+- Panopto now uses the human-readable title instead of the filename as the
+  session title. (The filename is still included in the description.)
 
 ### Other changes
 - Django version 3.2.9 is now used.
-- Titles must now be unique.
+- Titles must now be unique, and are limited to 255 characters.
 - Notes and filenames are now searchable.
 
 ## [1.6.0] - 2021-11-03
