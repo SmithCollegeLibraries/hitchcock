@@ -358,7 +358,11 @@ class AudioPlaylistLink(PlaylistLink):
         ordering = ['playlist_order']
         unique_together = ['av', 'playlist']
 
-    av = models.ForeignKey(Audio, on_delete=models.CASCADE)
+    av = models.ForeignKey(
+        Audio,
+        on_delete=models.CASCADE,
+        verbose_name='Audio – note that searching is case-sensitive!'
+    )
     playlist = models.ForeignKey(AudioPlaylist, on_delete=models.CASCADE)
     tracker = FieldTracker()
 
@@ -368,7 +372,11 @@ class VideoPlaylistLink(PlaylistLink):
         ordering = ['playlist_order']
         unique_together = ['av', 'playlist']
 
-    av = models.ForeignKey(Video, on_delete=models.CASCADE)
+    av = models.ForeignKey(
+        Video,
+        on_delete=models.CASCADE,
+        verbose_name='Video – note that searching is case-sensitive!'
+    )
     playlist = models.ForeignKey(VideoPlaylist, on_delete=models.CASCADE)
     tracker = FieldTracker()
 
