@@ -21,7 +21,7 @@ def validate_audio(field):
 
 def validate_captions(field):
     ext = os.path.splitext(field.name)[-1]
-    valid_extensions = ['.vtt']
+    valid_extensions = ['.vtt', '.srt']
     if not ext.lower() in valid_extensions:
         raise ValidationError('Unsupported file extension. Must be vtt.')
 
