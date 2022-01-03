@@ -1,6 +1,6 @@
 # Hitchcock Releases
 
-## [2.0.0] - unreleased
+## [2.0.0] - 2022-01-03
 Django upgrade; captions; playlists; cleanup tools
 
 ### New functions
