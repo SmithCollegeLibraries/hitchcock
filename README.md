@@ -130,4 +130,4 @@ the title in Panopto and ask if you want to rename it.
 To rename audio uploads, use the `--audio` parameter.
 
 To bulk update all sessions with titles that don't match, without confirming
-each session individually, use `--noconformation`.
+each session individually, use `--noconfirmation`.
