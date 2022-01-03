@@ -1,5 +1,8 @@
 # Hitchcock Releases
 
+## [2.0.2] - 2022-01-03
+Hotfix: case-insensitive searching of titles
+
 ## [2.0.1] - 2022-01-03
 Added documentation for Panopto rename management command
 

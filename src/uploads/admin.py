@@ -2,6 +2,8 @@ import copy
 
 from django import forms
 from django.contrib import admin
+from django.db import models
+from django.db.models.functions import Lower
 from django.utils.html import format_html, strip_tags
 from django.utils.safestring import mark_safe
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
@@ -18,6 +20,10 @@ admin.sites.AdminSite.site_header = 'Hitchcock Smith Libraries e-reserves admini
 admin.sites.AdminSite.site_title = 'Hitchcock Smith Libraries e-reserves administration'
 admin.sites.AdminSite.site_url = None # Disable "view site" link in header
 admin.sites.AdminSite.enable_nav_sidebar = False
+
+
+# Allow case-insensitive searching of titles
+models.CharField.register_lookup(Lower)
 
 
 def bytes_to_mb(byte_number):
@@ -43,11 +49,19 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
 
     base_model = Upload  # Optional, explicitly set here.
-    search_fields = ['title', 'barcode', 'upload', 'notes', 'ereserves_record_url']
+    search_fields = ['title', 'barcode', 'ereserves_record_url', 'upload', 'identifier', 'notes']
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
     ordering = ('-modified',)
     list_filter = ('published',)
     actions = [queue_for_processing,]
+
+    # Edit the method for getting search results to allow case-insensitive
+    # searching of titles
+    def get_search_results(self, request, queryset, search_term):
+        queryset, may_have_duplicates = super().get_search_results(request, queryset, search_term)
+        queryset |= self.model.objects.filter(title__lower__contains=search_term.lower())
+        return queryset, may_have_duplicates
+
     def size_in_mb(self, obj):
         if not obj or not obj.size:
             return None
@@ -193,7 +207,6 @@ class VideoAdmin(PanoptoUploadAdmin):
     form = VideoAdminForm
     base_model = Video  # Explicitly set here!
     show_in_index = True  # makes child model admin visible in main admin site
-    search_fields = ['title']
     inlines = [VttTrackInline]
 
 @admin.register(Audio)
@@ -201,8 +214,6 @@ class AudioAdmin(PanoptoUploadAdmin):
     form = AudioAdminForm
     base_model = Audio  # Explicitly set here!
     show_in_index = True  # makes child model admin visible in main admin site
-    search_fields = ['title']
-    # readonly_fields = ('size_in_mb', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing')
 
 @admin.register(Text)
 class TextAdmin(UploadChildAdmin):
@@ -299,9 +310,17 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
         'published',
     )
     list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size_in_mb', 'published', 'ereserves_record')
-    search_fields = ['title', 'barcode', 'ereserves_record_url', 'identifier']
+    search_fields = ['title', 'barcode', 'ereserves_record_url', 'identifier', 'notes']
     ordering = ('-modified',)
     actions = [queue_for_processing,]
+
+    # Edit the method for getting search results to allow case-insensitive
+    # searching of titles
+    def get_search_results(self, request, queryset, search_term):
+        queryset, may_have_duplicates = super().get_search_results(request, queryset, search_term)
+        queryset |= self.model.objects.filter(title__lower__contains=search_term.lower())
+        return queryset, may_have_duplicates
+
     def size_in_mb(self, obj):
         if not obj or not obj.size:
             return None
