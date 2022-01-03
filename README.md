@@ -117,3 +117,17 @@ that the file was originally saved.
 
 If the old file name and the new file name are the same, and the location is
 also the same, a suffix will be appended.
+
+### rename_panopto_sessions
+
+Usage `python manage.py rename_panopto_sessions [--noconfirmation] [--audio]`
+
+This script allows the user to rename Panopto sessions that are based on
+a filename instead of a title, giving a better user experience. It will go
+through each video upload for which the title in Hitchcock does not match
+the title in Panopto and ask if you want to rename it.
+
+To rename audio uploads, use the `--audio` parameter.
+
+To bulk update all sessions with titles that don't match, without confirming
+each session individually, use `--noconformation`.

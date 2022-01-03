@@ -1,5 +1,8 @@
 # Hitchcock Releases
 
+## [2.0.1] - 2022-01-03
+Added documentation for Panopto rename management command
+
 ## [2.0.0] - 2022-01-03
 Django upgrade; captions; playlists; cleanup tools
 
