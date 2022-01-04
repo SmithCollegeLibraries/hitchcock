@@ -1,5 +1,16 @@
 # Hitchcock Releases
 
+## [2.1.0] - unreleased
+Themed interface
+
+### New functions
+- The administration interface now contains support for "Themes". This allows
+  staff to change the color of the interface, as well as customize the
+  wording of the header directly from the interface. Being able to customize
+  the color is useful because it can visually signal different environments:
+  local environment, test environment, and multiple production environments
+  (such as ereserves and general acquisitions).
+
 ## [2.0.2] - 2022-01-03
 Hotfix: case-insensitive searching of titles
 
