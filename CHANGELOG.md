@@ -1,5 +1,8 @@
 # Hitchcock Releases
 
+## [2.0.3] - 2022-01-10
+Security update for Django; added URL for video playlists
+
 ## [2.0.2] - 2022-01-03
 Hotfix: case-insensitive searching of titles
 

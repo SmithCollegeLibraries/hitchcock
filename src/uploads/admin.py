@@ -264,7 +264,7 @@ class VideoPlaylistAdmin(UploadChildAdmin):
     base_model = VideoPlaylist
     show_in_index = True  # makes child model admin visible in main admin site
     list_display = ('title', 'panopto_playlist_id')
-    readonly_fields = ('panopto_playlist_id',)
+    readonly_fields = ('panopto_playlist_id', 'url')
     list_filter = ('title',)
     inlines = [VideoInline]
 
