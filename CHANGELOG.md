@@ -1,5 +1,8 @@
 # Hitchcock Releases
 
+## [2.0.4] - 2022-01-24
+Hotfix: change URL for renewing Panopto token
+
 ## [2.0.3] - 2022-01-10
 Security update for Django; added URL for video playlists
 
