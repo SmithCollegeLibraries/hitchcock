@@ -1,13 +1,5 @@
 # Hitchcock Releases
 
-## [2.0.4] - not released
-Regression tests; minor fixes and improvements
-
-### Fixes
- - The "published" option on audio and video edit forms is now hidden, since
-   the visibility of Panopto sessions is not actually controlled from
-   within Hitchcock
-
 ## [2.0.3] - 2022-01-10
 Security update for Django; added URL for video playlists
 

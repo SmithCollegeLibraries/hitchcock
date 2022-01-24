@@ -170,6 +170,7 @@ class PanoptoUploadAdmin(UploadChildAdmin):
                     'barcode',
                     'form',
                     'notes',
+                    'published',
                     'upload',
                     'size_in_mb',
                     'created',
