@@ -115,7 +115,7 @@ def staff_view_unpublished(render_func):
             if request.user.is_staff is True:
                 return render_func(request, obj)
             else:
-                raise PermissionDenied
+                raise PermissionDenied()
     return wrapper
 
 def show_text(request, pk):
