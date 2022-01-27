@@ -2,6 +2,8 @@ from behave import *
 import time
 import os
 import re
+from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 import sys, pdb
 
@@ -39,19 +41,22 @@ def step_imp(context):
     elif "Site administration" in driver.title:
         return # All set!
 
-@when('I ingest a "{object_type}" object')
+@when('I ingest an object of type "{object_type}"')
 def setp_imp(context, object_type):
     test_files = {
-        'video': 'ed.mp4',
-        'audio': 'band_1_clean.mp3',
-        'text': 'Lipsitz_Possessive_selections.pdf',
-        'audio album': [
-            {'file': 'Band_1_Clean.mp3', 'title': '"Half-hitch" performed by W. E. Pierce of North Shrewsbury and Northam, VT'},
-            {'file': 'Band_2_Clean.mp3', 'title': '"Lord Bateman (frag)" performed by W. E. Pierce of North Shrewsbury and Northam, VT'},
-            {'file': 'Band_3_Clean.mp3', 'title': '"Sailor boy" performed by W. E. Pierce of North Shrewsbury and Northam, VT'},
-            {'file': 'Band_4_Clean.mp3', 'title': '"Fair Charlotte" performed by W. E. Pierce of North Shrewsbury and Northam, VT'},
-            {'file': 'Band_5_Clean.mp3', 'title': '"Butcher boy" performed by Mrs. Elwin Burditt of Springfield, VT'},
-        ]
+        'video': {
+            'filename': 'ed.mp4',
+            'title': 'Test: Education',
+            'captions': 'lear.vtt',
+        },
+        'audio': {
+            'filename': 'band_1_clean.mp3',
+            'title': 'Test: Half-hitch',
+        },
+        'text': {
+            'filename': 'Lipsitz_Possessive_selections.pdf',
+            'title': 'Test: Lipsitz - Possessive (selections)',
+        },
     }
     driver = context.behave_driver
     base_url = context.target['base_url']
@@ -60,25 +65,32 @@ def setp_imp(context, object_type):
     driver.get(base_url + f'/admin/uploads/{object_type}/add/')
     assert f"Add {object_type}" in driver.title, "Upload add page title is wrong"
     # Fill out the form and submit it
-    unique_string = time.time()
-    assert "Add %s" % object_type in driver.title, \
-    "Add %s page title is wrong" % object_type
+    unique_string = str(time.time())
+    assert f"Add {object_type}" in driver.title, f"Add {object_type} page title is wrong"
     title_input = driver.find_element_by_name('title')
-    title_input.send_keys('Test %s upload %s' % (object_type, unique_string))
+    title_input.send_keys(test_files[object_type]['title'] + ' ' + unique_string)
 
     upload_button = driver.find_element_by_name('upload')
-    filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]
+    filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]['filename']
     upload_button.send_keys(filename)
     # Make sure to set the text type before saving if it's a text object
     if object_type == 'text':
         text_type_element = driver.get_element('#id_text_type')
         select_box = Select(text_type_element)
         select_box.select_by_value('article')
+    # Include captions if it's a video object
+    elif object_type == 'video':
+        vtt_upload_button = driver.find_element_by_id('id_vtttrack_set-0-upload')
+        vtt_filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]['captions']
+        vtt_upload_button.send_keys(vtt_filename)
+        vtt_type_element = driver.get_element('#id_vtttrack_set-0-type')
+        select_box = Select(vtt_type_element)
+        select_box.select_by_value('captions')
+
     submit_button = driver.find_element_by_xpath(
         "//input[@value='Save and continue editing']")
     submit_button.click()
-    assert "was added successfully" in driver.page_source, \
-    "Post ingest page doesn't say it 'was added successfully'"
+    assert "was added successfully" in driver.page_source, "Post ingest page doesn't say it 'was added successfully'"
     context.edit_urls[object_type] = driver.current_url
 
 @then('a valid object view URL should be displayed')
@@ -101,7 +113,8 @@ def step_imp(context, asset_viewer):
     driver = context.behave_driver
 
     if asset_viewer == 'av player':
-        # AV is in flux, skip this part of the test for now
+        # Test for session name
+        # Can we test for captions?
         pass
         # try:
         #     video_player = driver.get_element('.vjs-paused')
@@ -150,20 +163,24 @@ def step_imp(context, object_type, published_state):
     driver = context.behave_driver
     driver.get(context.edit_urls[object_type])
 
-    target_state = None
-
-    if published_state == "published":
-        target_state = True
-    elif published_state == "un-published":
+    # With Panopto, audio and video shouldn't have a "publish" status
+    target_state = True
+    if object_type == 'text' and published_state == "un-published":
         target_state = False
 
-    assert target_state is not None # Make sure it was set correctly by the gherkin
-
-    published_checkbox = driver.get_element('input#id_published')
-    if published_checkbox.is_selected() is not target_state:
-        published_checkbox.click()
-        published_checkbox.submit()
-        assert "was changed successfully" in driver.page_source, \
-        "Post edit page doesn't say it 'was changed successfully'"
+    if object_type == 'text':
+        published_checkbox = driver.get_element('input#id_published')
+        if published_checkbox.is_selected() is not target_state:
+            published_checkbox.click()
+            published_checkbox.submit()
+            assert "was changed successfully" in driver.page_source, \
+            "Post edit page doesn't say it 'was changed successfully'"
+        else:
+            return  # Nothing to do here, all set!
     else:
-        return # Nothing to do here, all set!
+        try:
+            published_checkbox = driver.get_element('input#id_published')
+            assert False, f"Published checkbox displays on {object_type}"
+        except NoSuchElementException:
+            # Good -- we don't want the Published checkbox to display
+            return
