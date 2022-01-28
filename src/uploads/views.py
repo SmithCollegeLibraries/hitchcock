@@ -178,12 +178,15 @@ def play_video_playlist(request, pk):
         # Not a proper UUID, give a 404 in this case
         raise Http404("Invalid identifier")
 
-    panopto_playlist_id = obj.panopto_playlist_id
-    if panopto_playlist_id is not None:
-        panopto_url = 'https://' + settings.PANOPTO_SERVER + '/Panopto/Pages/Viewer.aspx?pid=' + panopto_playlist_id
-    else:
-        raise Http404("Playlist not found")
-    return redirect(panopto_url)
+    @staff_view_unpublished
+    def render_video_playlist(request, obj):
+        panopto_playlist_id = obj.panopto_playlist_id
+        if panopto_playlist_id is not None:
+            panopto_url = 'https://' + settings.PANOPTO_SERVER + '/Panopto/Pages/Viewer.aspx?pid=' + panopto_playlist_id
+        else:
+            raise Http404("Playlist not found")
+        return redirect(panopto_url)
+    return render_video_playlist(request, obj)
 
 def play_audio_playlist(request, pk):
     try:
@@ -192,9 +195,12 @@ def play_audio_playlist(request, pk):
         # Not a proper UUID, give a 404 in this case
         raise Http404("Invalid identifier")
 
-    panopto_playlist_id = obj.panopto_playlist_id
-    if panopto_playlist_id is not None:
-        panopto_url = 'https://' + settings.PANOPTO_SERVER + '/Panopto/Pages/Viewer.aspx?pid=' + panopto_playlist_id
-    else:
-        raise Http404("Playlist not found")
-    return redirect(panopto_url)
+    @staff_view_unpublished
+    def render_audio_playlist(request, obj):
+        panopto_playlist_id = obj.panopto_playlist_id
+        if panopto_playlist_id is not None:
+            panopto_url = 'https://' + settings.PANOPTO_SERVER + '/Panopto/Pages/Viewer.aspx?pid=' + panopto_playlist_id
+        else:
+            raise Http404("Playlist not found")
+        return redirect(panopto_url)
+    render_audio_playlist(request, obj)
