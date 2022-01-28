@@ -38,7 +38,8 @@ class Upload(PolymorphicModel):
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
     barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode])
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
-    notes = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True, help_text='Publicly visible description, which may be copied to another service such as Panopto')
+    notes = models.TextField(blank=True, null=True, help_text='Private notes for library staff')
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
     size = models.BigIntegerField(blank=True, null=True)
@@ -255,7 +256,9 @@ class Playlist(PolymorphicModel):
     panopto_playlist_id = models.CharField(max_length=256, blank=True, null=True)
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
-    notes = models.TextField(blank=True, null=True)
+    published = models.BooleanField(default=True)
+    description = models.TextField(blank=True, null=True, help_text='Publicly visible description, which may be copied to another service such as Panopto')
+    notes = models.TextField(blank=True, null=True, help_text='Private notes for library staff')
 
     class Meta:
         abstract = True
@@ -451,6 +454,21 @@ def update_upload_size(sender, instance, **kwargs):
     """Saves the file size to the Upload model"""
     instance.size = instance.upload.size
 
+@receiver(models.signals.pre_save, sender=Video)
+def add_description(sender, instance, **kwargs):
+    """Adds a generic description with filename to description
+    field that will upload to Panopto"""
+    if not instance.description:
+        instance.description = f'This is a video session with the uploaded video file {os.path.basename(instance.upload.name)}'
+
+
+@receiver(models.signals.pre_save, sender=Audio)
+def add_description(sender, instance, **kwargs):
+    """Adds a generic description with filename to description
+    field that will upload to Panopto"""
+    if not instance.description:
+        instance.description = f'This is a video session with the uploaded audio file {os.path.basename(instance.upload.name)}'
+
 @receiver(models.signals.pre_save, sender=Text)
 @receiver(models.signals.pre_save, sender=Video)
 @receiver(models.signals.pre_save, sender=Audio)
@@ -479,7 +497,7 @@ def create_panopto_playlist(sender, instance, **kwargs):
     url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/playlists'
     data = {
         'Name': instance.title,
-        'Description': instance.notes,
+        'Description': instance.description,
         'FolderId': settings.PANOPTO_FOLDER_ID,
         'Sessions': [],  # We will add the sessions later
     }
@@ -491,7 +509,6 @@ def create_panopto_playlist(sender, instance, **kwargs):
 def refresh_playlist(sender, instance, **kwargs):
     """Add all the related playlist items on save."""
     instance.refresh_playlist_items()
-
 
 @receiver(models.signals.post_delete, sender=AudioPlaylist)
 @receiver(models.signals.post_delete, sender=VideoPlaylist)

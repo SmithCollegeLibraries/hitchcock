@@ -48,8 +48,7 @@ class PanoptoUploader:
         self.requests_session.headers.update({'Authorization': 'Bearer ' + access_token})
 
     def __inspect_response_is_retry_needed(self, response):
-        '''
-        Inspect the response of a request's call.
+        '''Inspect the response of a request's call.
         True indicates the retry needed, False indicates success. Otherwise an exception is thrown.
         Reference: https://stackoverflow.com/a/24519419
 
@@ -69,9 +68,8 @@ class PanoptoUploader:
         # Throw unhandled cases.
         response.raise_for_status()
 
-    def upload_video(self, file_path, folder_id, upload_title=None):
-        '''
-        Main upload method to go through all required steps.
+    def upload_video(self, file_path, folder_id, upload_title=None, upload_description=''):
+        '''Main upload method to go through all required steps.
         '''
         # step 1 - Create a session
         session_upload = self.__create_session(folder_id)
@@ -82,7 +80,7 @@ class PanoptoUploader:
         self.__multipart_upload_single_file(upload_target, file_path)
 
         # step 3 - create manifest file and uplaod it
-        self.__create_manifest_for_video(file_path, MANIFEST_FILE_NAME, upload_title)
+        self.__create_manifest_for_video(file_path, MANIFEST_FILE_NAME, upload_title, upload_description)
         self.__multipart_upload_single_file(upload_target, MANIFEST_FILE_NAME)
 
         # step 4 - finish the upload
@@ -156,18 +154,17 @@ class PanoptoUploader:
                 if not len(data):
                     break
                 part = s3.upload_part(Body = data, Bucket = bucket, Key = object_key, UploadId = mpu_id, PartNumber = i)
-                parts.append({'PartNumber': i, "ETag": part['ETag']})
+                parts.append({'PartNumber': i, 'ETag': part['ETag']})
                 uploaded_bytes += len(data)
                 print('  -- {0} of {1} bytes uploaded'.format(uploaded_bytes, total_bytes))
                 i += 1
 
         # Copmlete
-        result = s3.complete_multipart_upload(Bucket = bucket, Key = object_key, UploadId = mpu_id, MultipartUpload = {"Parts": parts})
+        result = s3.complete_multipart_upload(Bucket = bucket, Key = object_key, UploadId = mpu_id, MultipartUpload = {'Parts': parts})
         print('  -- complete called.')
 
-    def __create_manifest_for_video(self, file_path, manifest_file_name, upload_title=None):
-        '''
-        Create manifest XML file for a single video file, based on template.
+    def __create_manifest_for_video(self, file_path, manifest_file_name, upload_title=None, upload_description=''):
+        '''Create manifest XML file for a single video file, based on template.
         '''
         print('')
         print('Writing manifest file: {0}'.format(manifest_file_name))
@@ -184,7 +181,7 @@ class PanoptoUploader:
             template = fr.read()
         content = template\
         .replace('{Title}', title)\
-        .replace('{Description}', 'This is a video session with the uploaded video file {0}'.format(file_name))\
+        .replace('{Description}', upload_description)\
         .replace('{Filename}', file_name)\
         .replace('{Date}', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f-00:00'))
         with codecs.open(manifest_file_name, 'w', 'utf-8') as fw:

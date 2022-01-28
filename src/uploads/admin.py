@@ -12,7 +12,7 @@ from adminsortable2.admin import SortableInlineAdminMixin
 
 from . import tasks
 from .models import Upload, Video, Audio, Text, VttTrack, SiteSetting
-from .models import AudioPlaylist, VideoPlaylist
+from .models import Playlist, AudioPlaylist, VideoPlaylist
 
 # This is a hacky way to set text in the admin site, but it works...
 # https://stackoverflow.com/questions/4938491/django-admin-change-header-django-administration-text
@@ -100,7 +100,7 @@ class VideoInline(SortableInlineAdminMixin, admin.TabularInline):
     autocomplete_fields = ['av']
 
 class VideoAdminForm(forms.ModelForm):
-    upload_to_panopto = forms.BooleanField(required=False)
+    upload_to_panopto = forms.BooleanField(label='Upload to Panopto', required=False, initial=True)
 
     def save(self, commit=True):
         upload_to_panopto = self.cleaned_data.get('upload_to_panopto', None)
@@ -119,7 +119,7 @@ class VideoAdminForm(forms.ModelForm):
         fields = "__all__"
 
 class AudioAdminForm(forms.ModelForm):
-    upload_to_panopto = forms.BooleanField(required=False)
+    upload_to_panopto = forms.BooleanField(initial=True)
 
     def save(self, commit=True):
         upload_to_panopto = self.cleaned_data.get('upload_to_panopto', None)
@@ -140,47 +140,50 @@ class AudioAdminForm(forms.ModelForm):
 class PanoptoUploadAdmin(UploadChildAdmin):
     readonly_fields = ['size_in_mb', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing']
     def get_fieldsets(self, request, obj=None):
-        if obj is None:
-            panopto_fields = [
+        if obj is None or obj.panopto_session_id is None:
+            basic_fields = (
+                'title',
+                'form',
+                'upload',
+                'published',
                 'upload_to_panopto',
-                'panopto_session_id',
-                'processing_status',
-                'queued_for_processing',
-            ]
+                'url',
+                'notes',
+            )
         else:
-            if obj.panopto_session_id is None:
-                panopto_fields = [
-                    'upload_to_panopto',
-                    'panopto_session_id',
-                    'processing_status',
-                    'queued_for_processing',
-                ]
-            else:
-                panopto_fields = [
-                    'panopto_session_id',
-                    'processing_status',
-                    'queued_for_processing',
-                ]
+            basic_fields = (
+                'title',
+                'form',
+                'upload',
+                'published',
+                'url',
+                'notes',
+            )
+        panopto_fields = (
+            'panopto_session_id',
+            'processing_status',
+            'queued_for_processing',
+            'description',
+        )
 
         fieldsets = (
             (None, {
+                'fields': basic_fields
+            }),
+            ('Panopto', {
+                'classes': ('collapse',),
+                'fields': panopto_fields,
+            }),
+            ('Details', {
+                'classes': ('collapse',),
                 'fields': (
-                    'title',
+                    'identifier',
                     'ereserves_record_url',
                     'barcode',
-                    'form',
-                    'notes',
-                    'published',
-                    'upload',
                     'size_in_mb',
                     'created',
                     'modified',
-                    'identifier',
-                    'url',
-                )
-            }),
-            ("Panopto instance", {
-                'fields': panopto_fields,
+                ),
             }),
         )
         return fieldsets
@@ -220,7 +223,24 @@ class TextAdmin(UploadChildAdmin):
     base_model = Text  # Explicitly set here!
     show_in_index = True  # makes child model admin visible in main admin site
     list_display = ('title', 'text_type', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
-    readonly_fields = ('size_in_mb', 'created', 'modified', 'url', 'text_type', 'identifier', 'queued_for_processing')
+    readonly_fields = ('size_in_mb', 'created', 'modified', 'url', 'text_type', 'identifier')
+    fieldsets = (
+        (None, {
+            'fields': ('title',
+                       'form',
+                       'text_type',
+                       'upload',
+                       'published',
+                       'url',
+                       # 'description',
+                       'notes',
+                      ),
+        }),
+        ('Details', {
+            'classes': ('collapse',),
+            'fields': ('identifier', 'ereserves_record_url', 'barcode', 'size_in_mb', 'modified', 'created'),
+        }),
+    )
     list_filter = ('published', 'text_type')
     def get_readonly_fields(self, request, obj=None):
         """If obj is None that means the object is being created. In this case
@@ -234,13 +254,45 @@ class TextAdmin(UploadChildAdmin):
         else:
             return ['size_in_mb', 'created', 'modified', 'text_type', 'identifier', 'url', 'queued_for_processing']
 
+
+
+class PlaylistAdmin(PolymorphicChildModelAdmin):
+    base_model = Playlist
+    show_in_index = False
+    list_display = ('title', 'panopto_playlist_id')
+    readonly_fields = ('panopto_playlist_id', 'url', 'created', 'modified')
+    list_filter = ('title', 'panopto_playlist_id')
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'title',
+                'published',
+                'url',
+                'notes',
+            )
+        }),
+        ('Panopto', {
+            'classes': ('collapse',),
+            'fields': (
+                'panopto_playlist_id',
+                'description',
+            ),
+        }),
+        ('Details', {
+            'classes': ('collapse',),
+            'fields': (
+                'created',
+                'modified',
+            ),
+        }),
+    )
+
+
 @admin.register(AudioPlaylist)
-class AudioPlaylistAdmin(UploadChildAdmin):
+class AudioPlaylistAdmin(PlaylistAdmin):
     base_model = AudioPlaylist
     show_in_index = True  # makes child model admin visible in main admin site
-    list_display = ('title', 'panopto_playlist_id')
-    readonly_fields = ('panopto_playlist_id', 'url')
-    list_filter = ('title',)
     inlines = [AudioInline]
 
     # Change the saving behavior so that the inline playlist links
@@ -260,12 +312,9 @@ class AudioPlaylistAdmin(UploadChildAdmin):
 
 
 @admin.register(VideoPlaylist)
-class VideoPlaylistAdmin(UploadChildAdmin):
+class VideoPlaylistAdmin(PlaylistAdmin):
     base_model = VideoPlaylist
     show_in_index = True  # makes child model admin visible in main admin site
-    list_display = ('title', 'panopto_playlist_id')
-    readonly_fields = ('panopto_playlist_id', 'url')
-    list_filter = ('title',)
     inlines = [VideoInline]
 
     # Change the saving behavior so that the inline playlist links

@@ -169,10 +169,6 @@ def play_audio(request, pk):
             raise Http404("No audio found")
 
         return redirect(panopto_url)
-        # context = {
-        #     'panopto_session_id': obj.panopto_session_id,
-        # }
-        # return render(request, 'uploads/video-panopto-embed.html', context)
     return render_audio(request, obj)
 
 def play_video_playlist(request, pk):
