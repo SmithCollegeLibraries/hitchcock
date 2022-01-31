@@ -12,7 +12,7 @@ from adminsortable2.admin import SortableInlineAdminMixin
 
 from . import tasks
 from .models import Upload, Video, Audio, Text, VttTrack, SiteSetting
-from .models import Playlist, AudioPlaylist, VideoPlaylist
+from .models import Folder, Playlist, AudioPlaylist, VideoPlaylist
 
 # This is a hacky way to set text in the admin site, but it works...
 # https://stackoverflow.com/questions/4938491/django-admin-change-header-django-administration-text
@@ -140,25 +140,20 @@ class AudioAdminForm(forms.ModelForm):
 class PanoptoUploadAdmin(UploadChildAdmin):
     readonly_fields = ['size_in_mb', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing']
     def get_fieldsets(self, request, obj=None):
+        basic_fields = [
+            'title',
+            'form',
+            'upload',
+            'published',
+        ]
         if obj is None or obj.panopto_session_id is None:
-            basic_fields = (
-                'title',
-                'form',
-                'upload',
-                'published',
-                'upload_to_panopto',
-                'url',
-                'notes',
-            )
-        else:
-            basic_fields = (
-                'title',
-                'form',
-                'upload',
-                'published',
-                'url',
-                'notes',
-            )
+            basic_fields.append('upload_to_panopto')
+        # Hide the Folder field unless there is more than one
+        if Folder.objects.all().count() > 1:
+            basic_fields.append('folder')
+        basic_fields.append('url')
+        basic_fields.append('notes')
+
         panopto_fields = (
             'panopto_session_id',
             'processing_status',
@@ -263,14 +258,19 @@ class PlaylistAdmin(PolymorphicChildModelAdmin):
     readonly_fields = ('panopto_playlist_id', 'url', 'created', 'modified')
     list_filter = ('title', 'panopto_playlist_id')
 
+    basic_fields = [
+        'title',
+        'published',
+    ]
+    # Hide the Folder field unless there is more than one
+    if Folder.objects.all().count() > 1:
+        basic_fields.append('folder')
+    basic_fields.append('url')
+    basic_fields.append('notes')
+
     fieldsets = (
         (None, {
-            'fields': (
-                'title',
-                'published',
-                'url',
-                'notes',
-            )
+            'fields': basic_fields,
         }),
         ('Panopto', {
             'classes': ('collapse',),
@@ -384,6 +384,15 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
         if obj is not None:
             if obj.ereserves_record_url is not None:
                 return mark_safe("<a href='%s'>record</a>" % obj.ereserves_record_url)
+
+@admin.register(Folder)
+class FolderAdmin(admin.ModelAdmin):
+    # Until there is a post_save signal which can move all objects
+    # in a folder to the new Panopto folder ID, for now it cannot
+    # be changed.
+    readonly_fields = ('id', 'panopto_folder_id')
+    fields = ('id', 'name', 'panopto_folder_id', 'notes')
+    list_display = ('name', 'id', 'panopto_folder_id')
 
 @admin.register(SiteSetting)
 class SiteSettingAdmin(admin.ModelAdmin):

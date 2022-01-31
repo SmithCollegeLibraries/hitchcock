@@ -25,6 +25,19 @@ def create_panopto_requests_session(skip_verify=False):
     return requests_session
 
 
+
+class Folder(models.Model):
+    name = models.CharField(max_length=255, unique=True, help_text='Will be overridden by Panopto folder name, if applicable')
+    panopto_folder_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    notes = models.TextField(blank=True, null=True, help_text='Private notes for library staff')
+
+    def __repr__(self):
+        return f'{self.id} - {self.name}'
+
+    def __str__(self):
+        return self.name
+
+
 class Upload(PolymorphicModel):
     """ Generic "Upload" model for subclassing to the content specific models.
     """
@@ -127,6 +140,11 @@ class Video(Upload):
         max_length=1024,
         validators=[validate_video],
         help_text="mp4 format only",
+    )
+    folder = models.ForeignKey(
+        Folder,
+        default=settings.UPLOAD_FOLDER_PK,
+        on_delete=models.RESTRICT,
     )
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
@@ -237,6 +255,11 @@ class Audio(Upload):
         max_length=1024,
         validators=[validate_audio],
         help_text="mp3, m4a or wav")
+    folder = models.ForeignKey(
+        Folder,
+        default=settings.UPLOAD_FOLDER_PK,
+        on_delete=models.RESTRICT,
+    )
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
@@ -253,6 +276,11 @@ class Audio(Upload):
 class Playlist(PolymorphicModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255, unique=True)
+    folder = models.ForeignKey(
+        Folder,
+        default=settings.UPLOAD_FOLDER_PK,
+        on_delete=models.RESTRICT,
+    )
     panopto_playlist_id = models.CharField(max_length=256, blank=True, null=True)
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -498,7 +526,7 @@ def create_panopto_playlist(sender, instance, **kwargs):
     data = {
         'Name': instance.title,
         'Description': instance.description,
-        'FolderId': settings.PANOPTO_FOLDER_ID,
+        'FolderId': instance.folder.panopto_folder_id,
         'Sessions': [],  # We will add the sessions later
     }
     response = requests_session.post(url, data=data)
@@ -529,3 +557,19 @@ def remove_deleted_item_from_playlist(sender, instance, **kwargs):
     # has already been deleted
     if instance.playlist is not None:
         instance.delete_from_panopto_playlist()
+
+@receiver(models.signals.pre_save, sender=Folder)
+def get_folder_name_from_panopto(sender, instance, **kwargs):
+    """If a folder object has a Panopto folder ID associated with
+    it, pull the name from Panopto into the object. Otherwise,
+    leave the name unchanged.
+    """
+    requests_session = create_panopto_requests_session()
+
+    if instance.panopto_folder_id:
+        try:
+            url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/folders/{instance.panopto_folder_id}'
+            response = requests_session.get(url)
+            instance.name = response.json()['Name']
+        except:
+            pass
