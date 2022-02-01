@@ -46,45 +46,44 @@ def get_panopto_session_id(url):
     else:
         return re.match(r'.*\?id=(.*)', url).group(1)
 
-def add_video_to_database(title, notes, upload, panopto_session_id):
+def add_video_to_database(**kwargs):
     try:
         new_video = Video(
-            title=title,
-            notes=notes,
-            upload=upload,
-            panopto_session_id=panopto_session_id,
-            lock_panopto_session_id=True,
+            upload_to_panopto=(False if panopto_session_id else True)
+            lock_panopto_session_id=(True if panopto_session_id else False),
+            **kwargs,
         )
         new_video.save()
         return True
     except IntegrityError:
         print(f"Cannot add a video with duplicate title {title}.")
         new_title = input("Please enter new title, or ENTER to skip: ")
-        print(new_title)
         if not new_title:
             return False
         else:
-            return add_video_to_database(new_title, notes, upload, panopto_session_id)
+            kwargs['title'] = new_title
+            return add_video_to_database(**kwargs)
 
 
 class Command(BaseCommand):
-    help = 'Add the videos in the spreadsheet given to the database'
+    help = '''Add the videos in the spreadsheet given to the database.
+Columns:
+   0 - Timestamp
+   1 - Date processed
+   2 - DVD Title
+   3 - Notes
+   4 - Panopto/Hitchcock URL
+   5 - File Name
+   6 - Does the file have subtitles/captions?
+   7 - Backlog: Added to Hitchcock date
+   8 - Backlog: Staff initials
+   9 - Backlog: Hitchcock URL
+   10 - Backlog: Hitchcock URL added to E-Reserves
+'''
 
     def add_arguments(self, parser):
         parser.add_argument('spreadsheet_file', nargs=1, type=str)
         parser.add_argument('import_directory', nargs=1, type=str)
-
-    # 0 Timestamp
-    # 1 Date processed
-    # 2 DVD Title
-    # 3 Notes
-    # 4 Panopto/Hitchcock URL
-    # 5 File Name
-    # 6 Does the file have subtitles/captions?
-    # 7 Backlog: Added to Hitchcock date
-    # 8 Backlog: Staff initials
-    # 9 Backlog: Hitchcock URL
-    # 10 Backlog: Hitchcock URL added to E-Reserves
 
     def handle(self, *args, **options):
         spreadsheet_file = options['spreadsheet_file'][0]
@@ -122,11 +121,12 @@ class Command(BaseCommand):
                     # Results of video add saved in "skipped"
                     success = add_video_to_database(
                         title=title,
-                        notes=notes,
                         # specifying the name is needed so that the file
                         # goes in the media folder, rather than attempting
                         # to make a copy in the import folder
                         upload=File(existing_file, name=file_name),
+                        notes=notes,
+                        description='',
                         panopto_session_id=get_panopto_session_id(upload_url),
                     )
                     if success:
