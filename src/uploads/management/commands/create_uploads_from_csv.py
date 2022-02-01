@@ -9,6 +9,7 @@ from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 
+from uploads import tasks
 from uploads.models import Video
 
 LOGFILE = 'log.txt'
@@ -48,15 +49,19 @@ def get_panopto_session_id(url):
 
 def add_video_to_database(**kwargs):
     try:
-        new_video = Video(
-            upload_to_panopto=(False if panopto_session_id else True)
-            lock_panopto_session_id=(True if panopto_session_id else False),
-            **kwargs,
-        )
+        if 'panopto_session_id' in kwargs and kwargs['panopto_session_id']:
+            kwargs['lock_panopto_session_id'] = True
+        else:
+            kwargs['queued_for_processing'] = True
+            kwargs['processing_status'] = "Added to queue, waiting for file to be uploaded to Panopto"
+        new_video = Video(**kwargs)
         new_video.save()
-        return True
+        # Upload to Panopto if it was marked as queued for processing
+        if new_video.queued_for_processing:
+            tasks.upload_to_panopto(str(new_video.id))
+        return new_video
     except IntegrityError:
-        print(f"Cannot add a video with duplicate title {title}.")
+        print(f"Cannot add a video with duplicate title {new_video.title}.")
         new_title = input("Please enter new title, or ENTER to skip: ")
         if not new_title:
             return False
@@ -103,7 +108,7 @@ Columns:
             logfile.write('\n' + datetime.now().strftime('%Y-%m-%d %H:%M:%S%z') + '\n')
             rows = csv.reader(f)
             for row in rows:
-                print(row)
+                print('\t'.join(row))
                 title = row[2]
                 notes = row[3]
                 upload_url = row[4]
@@ -119,7 +124,7 @@ Columns:
                     # Split off the filename proper from the path
                     file_name = os.path.split(file_location)[1]
                     # Results of video add saved in "skipped"
-                    success = add_video_to_database(
+                    added_video = add_video_to_database(
                         title=title,
                         # specifying the name is needed so that the file
                         # goes in the media folder, rather than attempting
@@ -129,7 +134,7 @@ Columns:
                         description='',
                         panopto_session_id=get_panopto_session_id(upload_url),
                     )
-                    if success:
+                    if added_video:
                         # Log the filename added to Hitchcock and delete file
                         # from import location
                         logfile.write(file_location + '\n')

@@ -1,9 +1,10 @@
 import csv
-import cv2
 import os.path
 import re
 import shutil
+
 from datetime import datetime
+from ffprobe import FFProbe
 from hitchcock import settings
 
 from django.core.files import File
@@ -23,6 +24,11 @@ def add_video_to_playlist(upload_object, playlist_title, playlist_order):
     )
     new_playlist_link.save()
 
+def seconds_to_minutes_seconds(time_in_s):
+    minutes = time_in_s // 60
+    seconds = time_in_s - (60 * minutes)
+    return f'{minutes}:{ceil(seconds)}'
+
 
 class Command(BaseCommand):
     help = '''Add the videos in the spreadsheet given to the database.
@@ -39,24 +45,24 @@ Columns:
 '''
 
     def add_arguments(self, parser):
-        parser.add_argument('spreadsheet_file', nargs=1, type=str)
+        parser.add_argument('spreadsheet_location', nargs=1, type=str)
         parser.add_argument('import_directory', nargs=1, type=str)
 
     def handle(self, *args, **options):
-        spreadsheet_file = options['spreadsheet_file'][0]
+        spreadsheet_path = options['spreadsheet_location'][0]
         import_directory = options['import_directory'][0]
 
         # Create log CSV based on existing CSV name, plus a timestamp.
-        log_file = (os.path.splitext(spreadsheet_file)[0] +
+        log_path = (os.path.splitext(spreadsheet_path)[0] +
                     f'--{datetime.now():%Y-%m-%d--%H-%M}' +
                     '.csv')
         # Now open the spreadsheet and start processing the items in it
-        with open(spreadsheet_file) as f, open(log_file, 'w') as logfile:
+        with open(spreadsheet_path) as f, open(log_path, 'w') as logfile:
             logfile.write(f.readline())  # Copy header information to log
             rows = csv.reader(f)
-            log_writer = csv.writer(log_file)
+            log_writer = csv.writer(logfile)
             for row in rows:
-                print(row)
+                print('\t'.join(row))
                 file_location = get_location_of_file(import_directory, row[0])
                 title = row[1]
                 description = row[2]
@@ -64,7 +70,7 @@ Columns:
                 playlist_name = row[4]
                 playlist_order = row[5]
                 try:
-                    folder = Folder.objects.get(title=folder_name)
+                    folder = Folder.objects.get(name=folder_name)
                 except:
                     folder = Folder.objects.get(id=1)
                     print('Warning: incorrect folder name provided; using default folder')
@@ -75,8 +81,17 @@ Columns:
                 with open(file_location, 'rb') as existing_file:
                     # Split off the filename proper from the path
                     file_name = os.path.split(file_location)[1]
+
+                    # Capture video duration
+                    # https://stackoverflow.com/a/61572332/2569052
+                    metadata = FFProbe(file_location)
+                    for stream in metadata.streams:
+                        if stream.is_video():
+                            video_duration = seconds_to_minutes_seconds(stream.duration)
+                            break
+
                     # Results of video add saved in "skipped"
-                    success = add_video_to_database(
+                    added_video = add_video_to_database(
                         title=title,
                         # specifying the name is needed so that the file
                         # goes in the media folder, rather than attempting
@@ -85,15 +100,10 @@ Columns:
                         notes='',
                         description=description,
                         folder=folder,
-                        upload_to_panopto=True,
                     )
                     # Log the filename added to Hitchcock and delete file
                     # from import location
-                    if success:
-                        # Capture video duration
-                        # https://stackoverflow.com/a/61572332/2569052
-                        video_for_capturing_duration = cv2.VideoCapture(success.upload)
-                        video_duration = video_for_capturing_duration.get(cv2.CAP_PROP_POS_MSEC)
+                    if added_video:
                         log_writer.writerow([
                             row[0],
                             row[1],
@@ -101,19 +111,19 @@ Columns:
                             row[3],
                             row[4],
                             row[5],
-                            success.id,
-                            settings.BASE_URL + success.id,
+                            added_video.id,
+                            f'{settings.BASE_URL}/{str(added_video.id)}',
                             video_duration,
                         ])
                         os.remove(file_location)
                         # Add to playlist as well
                         if playlist_name and playlist_order:
                             if Playlist.objects.filter(title=playlist_name).exists():
-                                add_video_to_playlist(success, playlist_name, playlist_order)
+                                add_video_to_playlist(added_video, playlist_name, playlist_order)
                             else:
                                 print(f"Can't add to playlist {playlist_name} (doesn't exist)")
                     else:
-                        logfile.writer.writerow([
+                        log_writer.writerow([
                             row[0],
                             row[1],
                             row[2],
