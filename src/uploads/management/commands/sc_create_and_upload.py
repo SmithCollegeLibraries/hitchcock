@@ -85,7 +85,7 @@ Columns:
                         notes='',
                         description=description,
                         folder=folder,
-                        panopto_session_id=None,
+                        upload_to_panopto=True,
                     )
                     # Log the filename added to Hitchcock and delete file
                     # from import location
