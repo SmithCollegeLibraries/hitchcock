@@ -387,12 +387,22 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
 
 @admin.register(Folder)
 class FolderAdmin(admin.ModelAdmin):
-    # Until there is a post_save signal which can move all objects
-    # in a folder to the new Panopto folder ID, for now it cannot
-    # be changed.
-    readonly_fields = ('id', 'panopto_folder_id')
     fields = ('id', 'name', 'panopto_folder_id', 'notes')
     list_display = ('name', 'id', 'panopto_folder_id')
+
+    def get_readonly_fields(self, request, obj=None):
+        """Allow editing panopto_folder_id when creating. But until
+        there is a post_save signal which can move all objects
+        in a folder to the new Panopto folder ID, for now it cannot
+        be changed.
+        """
+        if obj is not None:
+            if obj.panopto_folder_id:
+                return ('id', 'panopto_folder_id')
+            else:
+                return ('id',)
+        else:
+            return ('id',)
 
 @admin.register(SiteSetting)
 class SiteSettingAdmin(admin.ModelAdmin):
