@@ -57,7 +57,7 @@ class PanoptoOAuth2():
         if access_token:
             return access_token
         else:
-            raise RefreshAccessTokenFailed("You need to set up the refresh token. Go to %s/admin/renew-panopto-token to set it up. More details in README.md." % settings.BASE_URL)
+            raise RefreshAccessTokenFailed("You need to set up the refresh token. Go to %s/renew-panopto-token to set it up. More details in README.md." % settings.BASE_URL)
             # access_token = self.get_new_token()
             # return access_token
 
