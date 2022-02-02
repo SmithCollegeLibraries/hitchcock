@@ -18,16 +18,19 @@ from uploads.management.commands.create_uploads_from_csv import get_location_of_
 def add_video_to_playlist(upload_object, playlist_title, playlist_order):
     playlist_to_add_to = VideoPlaylist.objects.get(title=playlist_title)
     new_playlist_link = VideoPlaylistLink(
-        av=upload_object.pk,
-        playlist=playlist_to_add_to.pk,
+        av=upload_object,
+        playlist=playlist_to_add_to,
         playlist_order=playlist_order,
     )
     new_playlist_link.save()
 
 def seconds_to_minutes_seconds(time_in_s):
-    minutes = time_in_s // 60
-    seconds = time_in_s - (60 * minutes)
-    return f'{minutes}:{ceil(seconds)}'
+    try:
+        minutes = time_in_s // 60
+        seconds = time_in_s - (60 * minutes)
+        return f'{minutes}:{ceil(seconds)}'
+    except TypeError:
+        return '0:00'
 
 
 class Command(BaseCommand):
@@ -118,7 +121,7 @@ Columns:
                         os.remove(file_location)
                         # Add to playlist as well
                         if playlist_name and playlist_order:
-                            if Playlist.objects.filter(title=playlist_name).exists():
+                            if VideoPlaylist.objects.filter(title=playlist_name).exists():
                                 add_video_to_playlist(added_video, playlist_name, playlist_order)
                             else:
                                 print(f"Can't add to playlist {playlist_name} (doesn't exist)")
