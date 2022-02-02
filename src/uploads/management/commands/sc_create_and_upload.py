@@ -6,6 +6,7 @@ import shutil
 from datetime import datetime
 from ffprobe import FFProbe
 from hitchcock import settings
+from math import ceil
 
 from django.core.files import File
 from django.core.management.base import BaseCommand
@@ -88,10 +89,11 @@ Columns:
                     # Capture video duration
                     # https://stackoverflow.com/a/61572332/2569052
                     metadata = FFProbe(file_location)
+                    video_duration_in_s = 0
                     for stream in metadata.streams:
                         if stream.is_video():
-                            video_duration = seconds_to_minutes_seconds(stream.duration)
-                            break
+                            video_duration_in_s = max(video_duration_in_s, float(stream.duration))
+                    video_duration = seconds_to_minutes_seconds(video_duration_in_s)
 
                     # Results of video add saved in "skipped"
                     added_video = add_video_to_database(
