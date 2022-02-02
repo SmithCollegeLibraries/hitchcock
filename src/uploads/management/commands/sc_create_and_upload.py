@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 from ffprobe import FFProbe
 from hitchcock import settings
-from math import ceil
+from math import floor, ceil
 
 from django.core.files import File
 from django.core.management.base import BaseCommand
@@ -27,9 +27,9 @@ def add_video_to_playlist(upload_object, playlist_title, playlist_order):
 
 def seconds_to_minutes_seconds(time_in_s):
     try:
-        minutes = time_in_s // 60
+        minutes = floor(time_in_s // 60)
         seconds = time_in_s - (60 * minutes)
-        return f'{minutes}:{ceil(seconds)}'
+        return f'{minutes}:{ceil(seconds):02}'
     except TypeError:
         return '0:00'
 
