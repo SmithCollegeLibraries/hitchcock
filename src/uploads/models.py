@@ -532,11 +532,11 @@ def create_panopto_playlist(sender, instance, **kwargs):
     response = requests_session.post(url, data=data)
     instance.panopto_playlist_id = response.json()['Id']
 
-@receiver(models.signals.post_save, sender=AudioPlaylist)
-@receiver(models.signals.post_save, sender=VideoPlaylist)
+@receiver(models.signals.post_save, sender=AudioPlaylistLink)
+@receiver(models.signals.post_save, sender=VideoPlaylistLink)
 def refresh_playlist(sender, instance, **kwargs):
     """Add all the related playlist items on save."""
-    instance.refresh_playlist_items()
+    instance.playlist.refresh_playlist_items()
 
 @receiver(models.signals.post_delete, sender=AudioPlaylist)
 @receiver(models.signals.post_delete, sender=VideoPlaylist)
