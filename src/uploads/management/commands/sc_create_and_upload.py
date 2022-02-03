@@ -1,10 +1,10 @@
 import csv
+import cv2
 import os.path
 import re
 import shutil
 
 from datetime import datetime
-from ffprobe import FFProbe
 from hitchcock import settings
 from math import floor, ceil
 
@@ -88,11 +88,10 @@ Columns:
 
                     # Capture video duration
                     # https://stackoverflow.com/a/61572332/2569052
-                    metadata = FFProbe(file_location)
-                    video_duration_in_s = 0
-                    for stream in metadata.streams:
-                        if stream.is_video():
-                            video_duration_in_s = max(video_duration_in_s, float(stream.duration))
+                    cap = cv2.VideoCapture(file_location)
+                    fps = cap.get(cv2.CAP_PROP_FPS)
+                    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                    video_duration_in_s = frame_count / fps
                     video_duration = seconds_to_minutes_seconds(video_duration_in_s)
 
                     # Results of video add saved in "skipped"
