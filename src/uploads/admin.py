@@ -405,11 +405,11 @@ class FolderAdmin(admin.ModelAdmin):
         """
         if obj is not None:
             if obj.panopto_folder_id:
-                return ('id', 'panopto_folder_id')
+                return ['id', 'panopto_folder_id']
             else:
-                return ('id',)
+                return ['id']
         else:
-            return ('id',)
+            return ['id']
 
 @admin.register(SiteSetting)
 class SiteSettingAdmin(admin.ModelAdmin):

@@ -14,6 +14,11 @@ from django.db.utils import IntegrityError
 
 from uploads.models import Folder, Video, VideoPlaylist, VideoPlaylistLink
 from uploads.management.commands.create_uploads_from_csv import get_location_of_file, add_video_to_database
+from uploads.panopto.panopto_oauth2 import RefreshAccessTokenFailed
+
+
+class VideoSkipped(Exception):
+    pass
 
 
 def add_video_to_playlist(upload_object, playlist_title, playlist_order):
@@ -60,6 +65,9 @@ Columns:
         log_path = (os.path.splitext(spreadsheet_path)[0] +
                     f'--{datetime.now():%Y-%m-%d--%H-%M}' +
                     '.csv')
+
+        playlists_to_save = []
+
         # Now open the spreadsheet and start processing the items in it
         with open(spreadsheet_path) as f, open(log_path, 'w') as logfile:
             logfile.write(f.readline())  # Copy header information to log
@@ -73,6 +81,7 @@ Columns:
                 folder_name = row[3]
                 playlist_name = row[4]
                 playlist_order = row[5]
+                panopto_session_id = row[6]
                 try:
                     folder = Folder.objects.get(name=folder_name)
                 except:
@@ -94,47 +103,59 @@ Columns:
                     video_duration_in_s = frame_count / fps
                     video_duration = seconds_to_minutes_seconds(video_duration_in_s)
 
-                    # Results of video add saved in "skipped"
-                    added_video = add_video_to_database(
-                        title=title,
-                        # specifying the name is needed so that the file
-                        # goes in the media folder, rather than attempting
-                        # to make a copy in the import folder
-                        upload=File(existing_file, name=file_name),
-                        notes='',
-                        description=description,
-                        folder=folder,
-                    )
-                    # Log the filename added to Hitchcock and delete file
-                    # from import location
-                    if added_video:
-                        log_writer.writerow([
-                            row[0],
-                            row[1],
-                            row[2],
-                            row[3],
-                            row[4],
-                            row[5],
-                            added_video.id,
-                            f'{settings.BASE_URL}/{str(added_video.id)}',
-                            video_duration,
-                        ])
-                        os.remove(file_location)
+                    try:
+                        added_video = add_video_to_database(
+                            title=title,
+                            # specifying the name is needed so that the file
+                            # goes in the media folder, rather than attempting
+                            # to make a copy in the import folder
+                            upload=File(existing_file, name=file_name),
+                            notes='',
+                            description=description,
+                            folder=folder,
+                            panopto_session_id=panopto_session_id,
+                        )
+                        if not added_video:
+                            raise VideoSkipped
                         # Add to playlist as well
                         if playlist_name and playlist_order:
                             if VideoPlaylist.objects.filter(title=playlist_name).exists():
                                 add_video_to_playlist(added_video, playlist_name, playlist_order)
+                                # Keep track of playlists to save, so that
+                                # they can all just be saved at the end
+                                if playlist_name not in playlists_to_save:
+                                    playlists_to_save.append(playlist_name)
                             else:
                                 print(f"Can't add to playlist {playlist_name} (doesn't exist)")
-                    else:
+                    except VideoSkipped:
                         log_writer.writerow([
-                            row[0],
-                            row[1],
-                            row[2],
-                            row[3],
-                            row[4],
-                            row[5],
-                            'ERROR',
-                            '',
-                            '',
+                            *row[0:6],
+                            'SKIPPED',
+                            'SKIPPED',
+                            video_duration,
                         ])
+                    except RefreshAccessTokenFailed:
+                        log_writer.writerow([
+                            *row[0:6],
+                            'ERROR',
+                            'ERROR',
+                            video_duration,
+                        ])
+                        print(f"You need to set up the refresh token. Go to {settings.BASE_URL}/renew-panopto-token to set it up. More details in README.md.")
+                        print(f"You can delete {title} from Hitchcock and upload it again.")
+                        break
+                    else:
+                    # If the upload was successful, after logging, delete
+                    # the file.
+                        log_writer.writerow([
+                            *row[0:6],
+                            added_video.id,
+                            f'{settings.BASE_URL}/videos/{str(added_video.id)}',
+                            video_duration,
+                        ])
+                        os.remove(file_location)
+
+        # Now save all the playlists
+        for playlist_name in playlists_to_save:
+            playlist_object = VideoPlaylist.objects.get(title=playlist_name)
+            playlist_object.save()

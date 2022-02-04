@@ -64,7 +64,7 @@ def add_video_to_database(**kwargs):
         print(f"Cannot add a video with duplicate title {new_video.title}.")
         new_title = input("Please enter new title, or ENTER to skip: ")
         if not new_title:
-            return False
+            return None
         else:
             kwargs['title'] = new_title
             return add_video_to_database(**kwargs)
