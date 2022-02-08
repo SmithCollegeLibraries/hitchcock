@@ -79,13 +79,13 @@ def setp_imp(context, object_type):
         select_box = Select(text_type_element)
         select_box.select_by_value('article')
     # Include captions if it's a video object
-    elif object_type == 'video':
-        vtt_upload_button = driver.find_element_by_id('id_vtttrack_set-0-upload')
-        vtt_filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]['captions']
-        vtt_upload_button.send_keys(vtt_filename)
-        vtt_type_element = driver.get_element('#id_vtttrack_set-0-type')
-        select_box = Select(vtt_type_element)
-        select_box.select_by_value('captions')
+    # elif object_type == 'video':
+    #     vtt_upload_button = driver.find_element_by_id('id_vtttrack_set-0-upload')
+    #     vtt_filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]['captions']
+    #     vtt_upload_button.send_keys(vtt_filename)
+    #     vtt_type_element = driver.get_element('#id_vtttrack_set-0-type')
+    #     select_box = Select(vtt_type_element)
+    #     select_box.select_by_value('captions')
 
     submit_button = driver.find_element_by_xpath(
         "//input[@value='Save and continue editing']")
@@ -163,24 +163,13 @@ def step_imp(context, object_type, published_state):
     driver = context.behave_driver
     driver.get(context.edit_urls[object_type])
 
-    # With Panopto, audio and video shouldn't have a "publish" status
-    target_state = True
-    if object_type == 'text' and published_state == "un-published":
-        target_state = False
+    target_state = False if published_state == "un-published" else True
 
-    if object_type == 'text':
-        published_checkbox = driver.get_element('input#id_published')
-        if published_checkbox.is_selected() is not target_state:
-            published_checkbox.click()
-            published_checkbox.submit()
-            assert "was changed successfully" in driver.page_source, \
-            "Post edit page doesn't say it 'was changed successfully'"
-        else:
-            return  # Nothing to do here, all set!
+    published_checkbox = driver.get_element('input#id_published')
+    if published_checkbox.is_selected() is not target_state:
+        published_checkbox.click()
+        published_checkbox.submit()
+        assert "was changed successfully" in driver.page_source, \
+        "Post edit page doesn't say it 'was changed successfully'"
     else:
-        try:
-            published_checkbox = driver.get_element('input#id_published')
-            assert False, f"Published checkbox displays on {object_type}"
-        except NoSuchElementException:
-            # Good -- we don't want the Published checkbox to display
-            return
+        return  # Nothing to do here, all set!
