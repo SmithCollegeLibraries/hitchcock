@@ -120,7 +120,7 @@ class VideoAdminForm(forms.ModelForm):
         fields = "__all__"
 
 class AudioAdminForm(forms.ModelForm):
-    upload_to_panopto = forms.BooleanField(initial=True)
+    upload_to_panopto = forms.BooleanField(initial=True, required=False)
 
     def save(self, commit=True):
         upload_to_panopto = self.cleaned_data.get('upload_to_panopto', None)
