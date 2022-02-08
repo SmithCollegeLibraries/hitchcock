@@ -4,6 +4,7 @@ from django import forms
 from django.contrib import admin
 from django.db import models
 from django.db.models.functions import Lower
+from django.db.utils import ProgrammingError
 from django.utils.html import format_html, strip_tags
 from django.utils.safestring import mark_safe
 from polymorphic.admin import PolymorphicParentModelAdmin, PolymorphicChildModelAdmin, PolymorphicChildModelFilter
@@ -119,7 +120,7 @@ class VideoAdminForm(forms.ModelForm):
         fields = "__all__"
 
 class AudioAdminForm(forms.ModelForm):
-    upload_to_panopto = forms.BooleanField(initial=True)
+    upload_to_panopto = forms.BooleanField(initial=True, required=False)
 
     def save(self, commit=True):
         upload_to_panopto = self.cleaned_data.get('upload_to_panopto', None)
@@ -149,8 +150,11 @@ class PanoptoUploadAdmin(UploadChildAdmin):
         if obj is None or obj.panopto_session_id is None:
             basic_fields.append('upload_to_panopto')
         # Hide the Folder field unless there is more than one
-        if Folder.objects.all().count() > 1:
-            basic_fields.append('folder')
+        try:
+            if Folder.objects.all().count() > 1:
+                basic_fields.append('folder')
+        except ProgrammingError:
+            pass
         basic_fields.append('url')
         basic_fields.append('notes')
 
@@ -263,8 +267,11 @@ class PlaylistAdmin(PolymorphicChildModelAdmin):
         'published',
     ]
     # Hide the Folder field unless there is more than one
-    if Folder.objects.all().count() > 1:
-        basic_fields.append('folder')
+    try:
+        if Folder.objects.all().count() > 1:
+            basic_fields.append('folder')
+    except ProgrammingError:
+        pass
     basic_fields.append('url')
     basic_fields.append('notes')
 
@@ -398,11 +405,11 @@ class FolderAdmin(admin.ModelAdmin):
         """
         if obj is not None:
             if obj.panopto_folder_id:
-                return ('id', 'panopto_folder_id')
+                return ['id', 'panopto_folder_id']
             else:
-                return ('id',)
+                return ['id']
         else:
-            return ('id',)
+            return ['id']
 
 @admin.register(SiteSetting)
 class SiteSettingAdmin(admin.ModelAdmin):

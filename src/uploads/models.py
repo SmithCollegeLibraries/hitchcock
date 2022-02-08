@@ -532,11 +532,11 @@ def create_panopto_playlist(sender, instance, **kwargs):
     response = requests_session.post(url, data=data)
     instance.panopto_playlist_id = response.json()['Id']
 
-@receiver(models.signals.post_save, sender=AudioPlaylist)
-@receiver(models.signals.post_save, sender=VideoPlaylist)
+@receiver(models.signals.post_save, sender=AudioPlaylistLink)
+@receiver(models.signals.post_save, sender=VideoPlaylistLink)
 def refresh_playlist(sender, instance, **kwargs):
     """Add all the related playlist items on save."""
-    instance.refresh_playlist_items()
+    instance.playlist.refresh_playlist_items()
 
 @receiver(models.signals.post_delete, sender=AudioPlaylist)
 @receiver(models.signals.post_delete, sender=VideoPlaylist)
@@ -546,8 +546,8 @@ def remove_panopto_playlist(sender, instance, **kwargs):
     """
     instance.delete_panopto_playlist()
 
-@receiver(models.signals.post_delete, sender=AudioPlaylistLink)
-@receiver(models.signals.post_delete, sender=VideoPlaylistLink)
+@receiver(models.signals.post_delete, sender=AudioPlaylist)
+@receiver(models.signals.post_delete, sender=VideoPlaylist)
 def remove_deleted_item_from_playlist(sender, instance, **kwargs):
     """Whenever an audio/video is taken off a playlist, the link
     between them is deleted. This needs to be reflected in the
@@ -564,12 +564,43 @@ def get_folder_name_from_panopto(sender, instance, **kwargs):
     it, pull the name from Panopto into the object. Otherwise,
     leave the name unchanged.
     """
-    requests_session = create_panopto_requests_session()
 
     if instance.panopto_folder_id:
         try:
+            requests_session = create_panopto_requests_session()
             url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/folders/{instance.panopto_folder_id}'
             response = requests_session.get(url)
             instance.name = response.json()['Name']
         except:
             pass
+
+@receiver(models.signals.post_save, sender=Audio)
+@receiver(models.signals.post_save, sender=Video)
+@receiver(models.signals.post_save, sender=AudioPlaylist)
+@receiver(models.signals.post_save, sender=VideoPlaylist)
+def update_folder_on_panopto(sender, instance, **kwargs):
+    """When an AV object or playlist has its title, folder or
+    description changed, update it on Panopto.
+    """
+    previous_title = instance.tracker.previous('title')
+    previous_description = instance.tracker.previous('description')
+    previous_folder = instance.tracker.previous('folder')
+    # Update if either the folder or the description has changed
+    if ((previous_title and instance.title != previous_title)
+            or (previous_description and instance.description != previous_description)
+            or (previous_folder and instance.folder.panopto_folder_id != previous_folder.panopto_folder_id)):
+        requests_session = create_panopto_requests_session()
+        if sender is Audio or sender is Video:
+            url_end = f'sessions/{instance.panopto_session_id}'
+        elif sender is AudioPlaylist or sender is VideoPlaylist:
+            url_end = f'playlists/{instance.panopto_playlist_id}'
+        else:
+            return  # This shouldn't happen
+        url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/{url_end}'
+        data = {
+            'Name': instance.title,
+            'Description': instance.description,
+            'FolderId': instance.folder.panopto_folder_id,
+        }
+        response = requests_session.put(url, data)
+        return response
