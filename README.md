@@ -46,7 +46,7 @@ Hitchcock uses the Panopto streaming service for transcoding and delivering AV c
 - Make sure that the PANOPTO_UPLOAD_MANIFEST_TEMPLATES and PANOPTO_AUTH_CACHE_FILE_PATH paths are writable by the user/group that the Hitchcock web service runs as.
 
 ### Oauth2 bearer token creation
-Log in as a super user in Hitchcock and point your web browser to [HITCHCOCK_BASE_URL]/admin/renew-panopto-token. This will redirect you to a Panopto log-in page and automatically redirect you back to the Hitchcock Oauth2 redirect endpoint (/panopto-auth2-redirect) which will consume the bearer token and cache it for later use.
+Log in as a super user in Hitchcock and point your web browser to [HITCHCOCK_BASE_URL]/renew-panopto-token. This will redirect you to a Panopto log-in page and automatically redirect you back to the Hitchcock Oauth2 redirect endpoint (/panopto-auth2-redirect) which will consume the bearer token and cache it for later use.
 Hence forth the API authentication should be set up and should require possibly only a very occasional retrial of the above steps.
 
 ### Set up Panopto upload background processing cron job
@@ -64,7 +64,7 @@ Hitchcock uses the Panopto Upload API to upload AV to Panopto (https://support.p
 
 ### API Client Authentication
 Once the API Client is set up on the Panopto side and the settings are configured in the Hitchcock settings file you must generate the initial bearer token which will ask you to log in to authorize the API connection from Hitchcock.
-To do this log in as a super user in Hitchcock and point your web browser to [HITCHCOCK_BASE_URL]/admin/renew-panopto-token. This will redirect you to a Panopto log-in page and automatically redirect you back to the Hitchcock Oauth2 redirect endpoint (/panopto-auth2-redirect) which will consume the bearer token and cache it for later use.
+To do this log in as a super user in Hitchcock and point your web browser to [HITCHCOCK_BASE_URL]/renew-panopto-token. This will redirect you to a Panopto log-in page and automatically redirect you back to the Hitchcock Oauth2 redirect endpoint (/panopto-auth2-redirect) which will consume the bearer token and cache it for later use.
 Hence forth the API authentication should be set up and should require possibly only a very occasional retrial of the above steps.
 
 ### Background tasks

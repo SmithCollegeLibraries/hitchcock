@@ -25,6 +25,19 @@ def create_panopto_requests_session(skip_verify=False):
     return requests_session
 
 
+
+class Folder(models.Model):
+    name = models.CharField(max_length=255, unique=True, help_text='Will be overridden by Panopto folder name, if applicable')
+    panopto_folder_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    notes = models.TextField(blank=True, null=True, help_text='Private notes for library staff')
+
+    def __repr__(self):
+        return f'{self.id} - {self.name}'
+
+    def __str__(self):
+        return self.name
+
+
 class Upload(PolymorphicModel):
     """ Generic "Upload" model for subclassing to the content specific models.
     """
@@ -38,7 +51,8 @@ class Upload(PolymorphicModel):
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
     barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode])
     form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
-    notes = models.TextField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True, help_text='Publicly visible description, which may be copied to another service such as Panopto')
+    notes = models.TextField(blank=True, null=True, help_text='Private notes for library staff')
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
     size = models.BigIntegerField(blank=True, null=True)
@@ -126,6 +140,11 @@ class Video(Upload):
         max_length=1024,
         validators=[validate_video],
         help_text="mp4 format only",
+    )
+    folder = models.ForeignKey(
+        Folder,
+        default=settings.UPLOAD_FOLDER_PK,
+        on_delete=models.RESTRICT,
     )
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
@@ -236,6 +255,11 @@ class Audio(Upload):
         max_length=1024,
         validators=[validate_audio],
         help_text="mp3, m4a or wav")
+    folder = models.ForeignKey(
+        Folder,
+        default=settings.UPLOAD_FOLDER_PK,
+        on_delete=models.RESTRICT,
+    )
     panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
@@ -252,10 +276,17 @@ class Audio(Upload):
 class Playlist(PolymorphicModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255, unique=True)
+    folder = models.ForeignKey(
+        Folder,
+        default=settings.UPLOAD_FOLDER_PK,
+        on_delete=models.RESTRICT,
+    )
     panopto_playlist_id = models.CharField(max_length=256, blank=True, null=True)
     modified = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
-    notes = models.TextField(blank=True, null=True)
+    published = models.BooleanField(default=True)
+    description = models.TextField(blank=True, null=True, help_text='Publicly visible description, which may be copied to another service such as Panopto')
+    notes = models.TextField(blank=True, null=True, help_text='Private notes for library staff')
 
     class Meta:
         abstract = True
@@ -451,6 +482,21 @@ def update_upload_size(sender, instance, **kwargs):
     """Saves the file size to the Upload model"""
     instance.size = instance.upload.size
 
+@receiver(models.signals.pre_save, sender=Video)
+def add_description(sender, instance, **kwargs):
+    """Adds a generic description with filename to description
+    field that will upload to Panopto"""
+    if not instance.description:
+        instance.description = f'This is a video session with the uploaded video file {os.path.basename(instance.upload.name)}'
+
+
+@receiver(models.signals.pre_save, sender=Audio)
+def add_description(sender, instance, **kwargs):
+    """Adds a generic description with filename to description
+    field that will upload to Panopto"""
+    if not instance.description:
+        instance.description = f'This is a video session with the uploaded audio file {os.path.basename(instance.upload.name)}'
+
 @receiver(models.signals.pre_save, sender=Text)
 @receiver(models.signals.pre_save, sender=Video)
 @receiver(models.signals.pre_save, sender=Audio)
@@ -479,19 +525,18 @@ def create_panopto_playlist(sender, instance, **kwargs):
     url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/playlists'
     data = {
         'Name': instance.title,
-        'Description': instance.notes,
-        'FolderId': settings.PANOPTO_FOLDER_ID,
+        'Description': instance.description,
+        'FolderId': instance.folder.panopto_folder_id,
         'Sessions': [],  # We will add the sessions later
     }
     response = requests_session.post(url, data=data)
     instance.panopto_playlist_id = response.json()['Id']
 
-@receiver(models.signals.post_save, sender=AudioPlaylist)
-@receiver(models.signals.post_save, sender=VideoPlaylist)
+@receiver(models.signals.post_save, sender=AudioPlaylistLink)
+@receiver(models.signals.post_save, sender=VideoPlaylistLink)
 def refresh_playlist(sender, instance, **kwargs):
     """Add all the related playlist items on save."""
-    instance.refresh_playlist_items()
-
+    instance.playlist.refresh_playlist_items()
 
 @receiver(models.signals.post_delete, sender=AudioPlaylist)
 @receiver(models.signals.post_delete, sender=VideoPlaylist)
@@ -501,8 +546,8 @@ def remove_panopto_playlist(sender, instance, **kwargs):
     """
     instance.delete_panopto_playlist()
 
-@receiver(models.signals.post_delete, sender=AudioPlaylistLink)
-@receiver(models.signals.post_delete, sender=VideoPlaylistLink)
+@receiver(models.signals.post_delete, sender=AudioPlaylist)
+@receiver(models.signals.post_delete, sender=VideoPlaylist)
 def remove_deleted_item_from_playlist(sender, instance, **kwargs):
     """Whenever an audio/video is taken off a playlist, the link
     between them is deleted. This needs to be reflected in the
@@ -512,3 +557,50 @@ def remove_deleted_item_from_playlist(sender, instance, **kwargs):
     # has already been deleted
     if instance.playlist is not None:
         instance.delete_from_panopto_playlist()
+
+@receiver(models.signals.pre_save, sender=Folder)
+def get_folder_name_from_panopto(sender, instance, **kwargs):
+    """If a folder object has a Panopto folder ID associated with
+    it, pull the name from Panopto into the object. Otherwise,
+    leave the name unchanged.
+    """
+
+    if instance.panopto_folder_id:
+        try:
+            requests_session = create_panopto_requests_session()
+            url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/folders/{instance.panopto_folder_id}'
+            response = requests_session.get(url)
+            instance.name = response.json()['Name']
+        except:
+            pass
+
+@receiver(models.signals.post_save, sender=Audio)
+@receiver(models.signals.post_save, sender=Video)
+@receiver(models.signals.post_save, sender=AudioPlaylist)
+@receiver(models.signals.post_save, sender=VideoPlaylist)
+def update_folder_on_panopto(sender, instance, **kwargs):
+    """When an AV object or playlist has its title, folder or
+    description changed, update it on Panopto.
+    """
+    previous_title = instance.tracker.previous('title')
+    previous_description = instance.tracker.previous('description')
+    previous_folder = instance.tracker.previous('folder')
+    # Update if either the folder or the description has changed
+    if ((previous_title and instance.title != previous_title)
+            or (previous_description and instance.description != previous_description)
+            or (previous_folder and instance.folder.panopto_folder_id != previous_folder.panopto_folder_id)):
+        requests_session = create_panopto_requests_session()
+        if sender is Audio or sender is Video:
+            url_end = f'sessions/{instance.panopto_session_id}'
+        elif sender is AudioPlaylist or sender is VideoPlaylist:
+            url_end = f'playlists/{instance.panopto_playlist_id}'
+        else:
+            return  # This shouldn't happen
+        url = f'https://{settings.PANOPTO_SERVER}/Panopto/api/v1/{url_end}'
+        data = {
+            'Name': instance.title,
+            'Description': instance.description,
+            'FolderId': instance.folder.panopto_folder_id,
+        }
+        response = requests_session.put(url, data)
+        return response
