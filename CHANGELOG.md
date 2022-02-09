@@ -1,5 +1,24 @@
 # Hitchcock Releases
 
+[enhanced-panopto]
+More support for Panopto integration
+
+### New functions
+- Added "folder" object to associate different files with different
+  Panopto folders.
+- Added "description" field to uploads and playlists, which are currently
+  mirrored on Panopto
+- A script has been added to support batch upload of Special Collections
+  videos, including duration information
+
+### Improvements
+- Changes to titles, descriptions or folders will now trigger an update
+on Panopto as well.
+
+### Other changes
+- The URL for renewing the Panopto authorization token has changed.
+
+
 ## [2.0.4] - 2022-01-24
 Hotfix: change URL for renewing Panopto token
 
