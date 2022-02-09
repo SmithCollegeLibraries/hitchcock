@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand
 # from django.db.models import Model
 
 from uploads.models import Video, Audio, Text, VttTrack
-from upload.models import get_upload_path
+from uploads.models import get_upload_path
 
 
 class Command(BaseCommand):
