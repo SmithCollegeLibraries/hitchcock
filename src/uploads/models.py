@@ -424,6 +424,20 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
         if os.path.isfile(instance.upload.path):
             os.remove(instance.upload.path)
 
+# Rename file if the title has changed
+@receiver(models.signals.post_save, sender=Text)
+@receiver(models.signals.post_save, sender=Video)
+@receiver(models.signals.post_save, sender=Audio)
+@receiver(models.signals.post_save, sender=VttTrack)
+def rename_file_on_title_change(sender, instance, **kwargs):
+    """Checks the old title against the new title, and if it
+    has changed, renames the file in the system.
+    """
+    previous_title = instance.tracker.previous('title')
+    if previous_title:
+        if instance.title != previous_title:
+            instance.rename_upload(get_upload_path(instance, instance.upload.name))
+
 # Delete old file if the file has changed
 @receiver(models.signals.post_save, sender=Text)
 @receiver(models.signals.post_save, sender=Video)
@@ -510,7 +524,6 @@ def create_panopto_playlist(sender, instance, **kwargs):
 def refresh_playlist(sender, instance, **kwargs):
     """Add all the related playlist items on save."""
     instance.refresh_playlist_items()
-
 
 @receiver(models.signals.post_delete, sender=AudioPlaylist)
 @receiver(models.signals.post_delete, sender=VideoPlaylist)
