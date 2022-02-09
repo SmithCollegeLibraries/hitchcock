@@ -1,12 +1,14 @@
 import uuid
 import os
 import requests
+from datetime import datetime
 
 from django.core.files.storage import DefaultStorage
 from django.db import models
 from django.db.models.query_utils import DeferredAttribute
 from django.dispatch import receiver
 from django.conf import settings
+from django.utils.text import slugify
 from model_utils import FieldTracker
 from polymorphic.models import PolymorphicModel
 from .panopto.panopto_oauth2 import PanoptoOAuth2
@@ -15,6 +17,37 @@ from .validators import validate_video, validate_audio, validate_text, validate_
 # Obsolete; here for migrations to work
 def audiotrack_upload_path(instance, filename):
     return ''
+
+def get_upload_path(instance, filename):
+    """Calculate the appropriate path to upload files to (depending
+    on the upload type), so that they are easier to manage on the
+    filesystem. The filename will be based on the upload's title.
+    """
+    # The subdir will vary depending on the upload type
+    if isinstance(instance, Text):
+        lookup = {
+            'article': 'articles/',
+            'book_excerpt': 'books-excerpt/',
+            'book_whole': 'books-whole/',
+            'other': 'other/',
+        }
+        subdir = settings.TEXT_SUBDIR_NAME + lookup[instance.text_type]
+    elif isinstance(instance, Video):
+        subdir = settings.AV_SUBDIR_NAME + settings.VIDEO_SUBDIR_NAME
+    elif isinstance(instance, Audio):
+        subdir = settings.AV_SUBDIR_NAME + settings.AUDIO_SUBDIR_NAME
+    else:
+        assert isinstance(instance, VttTrack)
+        subdir = settings.AV_SUBDIR_NAME + settings.VTT_SUBDIR_NAME
+
+    # Reimplement filename sanitization, and collision avoidance
+    storage = instance.upload.storage
+    extension = os.path.splitext(filename)[1]
+    # Slugify the title and add the extension from the filename
+    valid_filename = storage.get_valid_name(slugify(instance.title)) + extension.lower()
+    proposed_path = subdir + f'{datetime.today().year}/' + valid_filename
+    available_filename = storage.get_available_name(proposed_path)
+    return available_filename
 
 def create_panopto_requests_session(skip_verify=False):
     oauth2 = PanoptoOAuth2(settings.PANOPTO_SERVER, settings.PANOPTO_CLIENT_ID, settings.PANOPTO_CLIENT_SECRET, not skip_verify, settings.PANOPTO_AUTH_CACHE_FILE_PATH)
@@ -71,27 +104,9 @@ class Upload(PolymorphicModel):
         verbose_name_plural = "Uploads (all types)"
 
 ### Text i.e. pdf ###
-def text_upload_path(instance, filename):
-    """Calculate the appropriate path to upload text files to, depending
-    on the type chosen for the given text upload. So that they are easier
-    to manage on the filesystem.
-    """
-    lookup = {
-        'article': 'articles/',
-        'book_excerpt': 'books-excerpt/',
-        'book_whole': 'books-whole/',
-        'other': 'other/',
-    }
-    # Reimplement filename sanitization, and collision avoidance
-    storage = instance.upload.storage
-    valid_filename = storage.get_valid_name(filename)
-    proposed_path = settings.TEXT_SUBDIR_NAME + lookup[instance.text_type] + valid_filename
-    available_filename = storage.get_available_name(proposed_path)
-    return available_filename
-
 class Text(Upload):
     upload = models.FileField(
-        upload_to=text_upload_path,
+        upload_to=get_upload_path,
         max_length=1024,
         validators=[validate_text],
         help_text="pdf format only",
@@ -122,7 +137,7 @@ class Text(Upload):
 ### Video i.e. mp4 ###
 class Video(Upload):
     upload = models.FileField(
-        upload_to=settings.AV_SUBDIR_NAME + 'video/',
+        upload_to=get_upload_path,
         max_length=1024,
         validators=[validate_video],
         help_text="mp4 format only",
@@ -178,7 +193,7 @@ class VttTrack(models.Model):
     ]
 
     upload = models.FileField(
-        upload_to=settings.AV_SUBDIR_NAME + settings.VTT_SUBDIR_NAME,
+        upload_to=get_upload_path,
         max_length=1024,
         validators=[validate_captions],
         help_text="vtt format only",
@@ -232,7 +247,7 @@ class VttTrack(models.Model):
 # Audio i.e. mp3, m4a, or wav
 class Audio(Upload):
     upload = models.FileField(
-        upload_to=settings.AV_SUBDIR_NAME + 'audio/',
+        upload_to=get_upload_path,
         max_length=1024,
         validators=[validate_audio],
         help_text="mp3, m4a or wav")
