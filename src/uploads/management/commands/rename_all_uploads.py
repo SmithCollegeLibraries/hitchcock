@@ -10,24 +10,21 @@ from django.core.management.base import BaseCommand
 # from django.db.models import Model
 
 from uploads.models import Video, Audio, Text, VttTrack
+from upload.models import get_upload_path
 
 
 class Command(BaseCommand):
-    help = 'Change the filename associated with an upload'
+    help = ("Change the filename associated with all uploads of a given type, "
+            "based on the upload's title")
 
     def add_arguments(self, parser):
         parser.add_argument('type_of_upload', choices=['Video', 'Audio', 'Text', 'VttTrack'])
-        parser.add_argument('current_name', nargs=1, type=str)
-        parser.add_argument('new_name', nargs=1, type=str)
 
     def handle(self, *args, **options):
         type_of_upload = eval(options['type_of_upload'])
-        current_name = options['current_name'][0]
-        new_name = options['new_name'][0]
 
-        matching_uploads = type_of_upload.objects.filter(upload__contains=current_name)
+        all_uploads_of_type = type_of_upload.objects.all()
         # print(matching_uploads)
-        for u in matching_uploads:
-            if os.path.split(u.upload.name)[1] == current_name:
-                print(u.upload.name)
-                u.rename_upload(new_name)
+        for u in all_uploads_of_type:
+            print(u.upload.name)
+            u.rename_upload(get_upload_path(u, u.upload.name))

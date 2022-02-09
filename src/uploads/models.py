@@ -97,6 +97,10 @@ class Upload(PolymorphicModel):
     def __str__(self):
         return self.title
 
+    def rename_upload(self, new_location):
+        with open(os.path.join(settings.MEDIA_ROOT, self.upload.name), 'rb') as f:
+            self.upload.save(new_location, File(f))
+
     class Meta:
         permissions = [
             ("view_inventory", "Can view non-staff inventory of materials (for faculty)"),
