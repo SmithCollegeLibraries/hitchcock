@@ -18,6 +18,11 @@ from .validators import validate_video, validate_audio, validate_text, validate_
 def audiotrack_upload_path(instance, filename):
     return ''
 
+# Obsolete; here for migrations to work
+def text_upload_path(instance, filename):
+    return ''
+
+# Current upload path function for all objects
 def get_upload_path(instance, filename):
     """Calculate the appropriate path to upload files to (depending
     on the upload type), so that they are easier to manage on the
