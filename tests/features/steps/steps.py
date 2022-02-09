@@ -7,6 +7,22 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import Select
 import sys, pdb
 
+TEST_FILES = {
+    'video': {
+        'filename': 'ed.mp4',
+        'title': "Test: Elephant's Dream",
+        'captions': 'lear.vtt',
+    },
+    'audio': {
+        'filename': 'band_1_clean.mp3',
+        'title': 'Test: Half-hitch',
+    },
+    'text': {
+        'filename': 'Lipsitz_Possessive_selections.pdf',
+        'title': 'Test: Lipsitz - Possessive (selections)',
+    },
+}
+
 def get_includes_text(driver, tag, text):
     element = driver.find_element_by_xpath(\
     "//%s[contains(text(),'%s')]" % (tag, text))
@@ -43,21 +59,6 @@ def step_imp(context):
 
 @when('I ingest an object of type "{object_type}"')
 def setp_imp(context, object_type):
-    test_files = {
-        'video': {
-            'filename': 'ed.mp4',
-            'title': 'Test: Education',
-            'captions': 'lear.vtt',
-        },
-        'audio': {
-            'filename': 'band_1_clean.mp3',
-            'title': 'Test: Half-hitch',
-        },
-        'text': {
-            'filename': 'Lipsitz_Possessive_selections.pdf',
-            'title': 'Test: Lipsitz - Possessive (selections)',
-        },
-    }
     driver = context.behave_driver
     base_url = context.target['base_url']
 
@@ -68,20 +69,20 @@ def setp_imp(context, object_type):
     unique_string = str(time.time())
     assert f"Add {object_type}" in driver.title, f"Add {object_type} page title is wrong"
     title_input = driver.find_element_by_name('title')
-    title_input.send_keys(test_files[object_type]['title'] + ' ' + unique_string)
+    title_input.send_keys(TEST_FILES[object_type]['title'] + ' ' + unique_string)
 
     upload_button = driver.find_element_by_name('upload')
-    filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]['filename']
+    filename = os.getcwd() + '/sample_upload_files/' + TEST_FILES[object_type]['filename']
     upload_button.send_keys(filename)
     # Make sure to set the text type before saving if it's a text object
     if object_type == 'text':
         text_type_element = driver.get_element('#id_text_type')
         select_box = Select(text_type_element)
         select_box.select_by_value('article')
-    # Include captions if it's a video object
+    # TODO: Include captions if it's a video object
     # elif object_type == 'video':
-    #     vtt_upload_button = driver.find_element_by_id('id_vtttrack_set-0-upload')
-    #     vtt_filename = os.getcwd() + '/sample_upload_files/' + test_files[object_type]['captions']
+    #     vtt_upload_button = driver.find_element_by_xpath('//*[@id="id_vtttrack_set-0-upload"]')
+    #     vtt_filename = os.getcwd() + '/sample_upload_files/' + TEST_FILES[object_type]['captions']
     #     vtt_upload_button.send_keys(vtt_filename)
     #     vtt_type_element = driver.get_element('#id_vtttrack_set-0-type')
     #     select_box = Select(vtt_type_element)
@@ -106,6 +107,10 @@ def step_imp(context, object_type):
     url_element = driver.get_element('#hitchcock-url')
     context.view_urls[object_type] = url_element.text # Save this for later for other tests
     view_link_element = driver.find_element_by_xpath("//a[contains(text(),'view')]")
+    if object_type == 'video':
+        time.sleep(300)
+    elif object_type == 'audio':
+        time.sleep(120)
     view_link_element.click()
 
 @then('a working "{asset_viewer}" should load')
@@ -113,20 +118,22 @@ def step_imp(context, asset_viewer):
     driver = context.behave_driver
 
     if asset_viewer == 'av player':
-        # Test for session name
-        # Can we test for captions?
-        pass
-        # try:
-        #     video_player = driver.get_element('.vjs-paused')
-        #     video_player.click() # Start the video
-        # except:
-        #     assert False, "video player couldn't be found/started"
-        # time.sleep(5)
-        # try:
-        #     video_player = driver.get_element('.vjs-playing')
-        #     video_player.click() # Start the video
-        # except:
-        #     assert False, "video player didn't start or couldn't be paused"
+        time.sleep(5)
+        # TODO: Can we test for captions?
+
+        panopto_header_title = driver.find_element_by_xpath('//*[@id="deliveryTitle"]')
+        assert panopto_header_title == TEST_FILES[object_type]['title']
+
+        try:
+            panopto_play_button = driver.find_element_by_xpath('//*[@id="playButton"]')
+            panopto_play_button.click()  # Start the video
+            time.sleep(5)
+            try:
+                video_player.click()  # Stop the video
+            except:
+                assert False, "Video player couldn't be paused"
+        except:
+            assert False, "Video player couldn't be found/started"
 
     elif asset_viewer == 'pdf viewer':
         # pdb.Pdb(stdout=sys.__stdout__).set_trace()
