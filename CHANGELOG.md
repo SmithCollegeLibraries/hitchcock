@@ -1,5 +1,18 @@
 # Hitchcock Releases
 
+[readable-filenames]
+Human-readable filenames drawn from titles
+
+### Changes
+- Filenames are now drawn from the title, rather than the uploaded
+  filename, so that staff don't have to assign names in more than one
+  place for files to be findable and filenames to be readable.
+- The location of files in the directory will be updated when a title
+  is changed.
+- Files are now sorted into large buckets by year of upload (or last title
+  change), to avoid crowding a single directory excessively.
+- Edited management command for bulk updating of files.
+
 ## [2.0.4] - 2022-01-24
 Hotfix: change URL for renewing Panopto token
 
