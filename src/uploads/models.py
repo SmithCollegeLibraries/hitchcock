@@ -3,6 +3,7 @@ import os
 import requests
 from datetime import datetime
 
+from django.core.files import File
 from django.core.files.storage import DefaultStorage
 from django.db import models
 from django.db.models.query_utils import DeferredAttribute
