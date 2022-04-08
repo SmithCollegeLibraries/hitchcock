@@ -117,9 +117,18 @@ class Upload(PolymorphicModel):
     def __str__(self):
         return self.title
 
-    def rename_upload(self, new_location):
-        with open(os.path.join(settings.MEDIA_ROOT, self.upload.name), 'rb') as f:
+    def rename_upload(self, new_location=None):
+        old_filename = self.upload.name
+        old_location = self.upload.path
+        # Set default new location based on the title
+        if not new_location:
+            new_location = get_upload_path(self, old_filename)
+        # Create new file with new location
+        with open(os.path.join(settings.MEDIA_ROOT, old_location), 'rb') as f:
             self.upload.save(new_location, File(f))
+        # Delete previous file if it has changed
+        if old_location != new_location:
+            os.remove(old_location)
 
     class Meta:
         permissions = [
@@ -461,33 +470,16 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
         if os.path.isfile(instance.upload.path):
             os.remove(instance.upload.path)
 
-# Rename file if the title has changed
 @receiver(models.signals.post_save, sender=Text)
 @receiver(models.signals.post_save, sender=Video)
 @receiver(models.signals.post_save, sender=Audio)
 @receiver(models.signals.post_save, sender=VttTrack)
-def rename_file_on_title_change(sender, instance, **kwargs):
-    """Checks the old title against the new title, and if it
-    has changed, renames the file in the system.
+def rename_or_delete_if_necessary(sender, instance, **kwargs):
+    """If a file has a name that doesn't match the current title
+    upon saving, rename the file. Delete a file that has been changed.
     """
-    previous_title = instance.tracker.previous('title')
-    if previous_title:
-        if instance.title != previous_title:
-            instance.rename_upload(get_upload_path(instance, instance.upload.name))
-
-# Delete old file if the file has changed
-@receiver(models.signals.post_save, sender=Text)
-@receiver(models.signals.post_save, sender=Video)
-@receiver(models.signals.post_save, sender=Audio)
-@receiver(models.signals.post_save, sender=VttTrack)
-def delete_previous_upload(sender, instance, **kwargs):
-    """Checks the old file against the new file, and if it has
-    changed, deletes the old file.
-    """
-    previous_upload = instance.tracker.previous('upload')
-    if previous_upload:
-        if instance.upload.path != previous_upload.path:
-            os.remove(instance.tracker.previous('upload').path)
+    if slugify(instance.title) not in instance.upload.name:
+        instance.rename_upload()
 
 # Add tag to Panopto session when Hitchcock entry is deleted
 @receiver(models.signals.post_delete, sender=Video)
