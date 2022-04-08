@@ -1,5 +1,16 @@
 # Hitchcock Releases
 
+## [2.2.1] - unreleased
+Themed interface
+
+### New functions
+- The administration interface now contains support for "Themes". This allows
+  staff to change the color of the interface, as well as customize the
+  wording of the header directly from the interface. Being able to customize
+  the color is useful because it can visually signal different environments:
+  local environment, test environment, and multiple production environments
+  (such as ereserves and general acquisitions).
+
 ## [2.2.0] - unreleased
 Human-readable filenames drawn from titles
 
@@ -31,7 +42,6 @@ on Panopto as well.
 
 ### Other changes
 - The URL for renewing the Panopto authorization token has changed.
-
 
 ## [2.0.4] - 2022-01-24
 Hotfix: change URL for renewing Panopto token
