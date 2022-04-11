@@ -46,6 +46,12 @@ def queue_for_processing(modeladmin, request, queryset):
         item.save()
 queue_for_processing.short_description = "(Re)process selected items"
 
+def save_update(modeladmin, request, queryset):
+    for item in queryset.all():
+        item.save()
+save_update.short_description = "Save and update"
+
+
 class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
 
@@ -54,7 +60,7 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
     ordering = ('-modified',)
     list_filter = ('published',)
-    actions = [queue_for_processing,]
+    actions = [queue_for_processing, save_update]
 
     # Edit the method for getting search results to allow case-insensitive
     # searching of titles
@@ -368,7 +374,7 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
     list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size_in_mb', 'published', 'ereserves_record')
     search_fields = ['title', 'barcode', 'ereserves_record_url', 'identifier', 'notes']
     ordering = ('-modified',)
-    actions = [queue_for_processing,]
+    actions = [queue_for_processing, save_update]
 
     # Edit the method for getting search results to allow case-insensitive
     # searching of titles

@@ -1,6 +1,15 @@
 # Hitchcock Releases
 
-## [2.2.1] - unreleased
+## [2.2.2] - development release
+Batch save and update
+
+### New functions
+- The administration dropdown allows for batch saving/updating of files.
+  This triggers automatic processes that are now done upon save, which
+  was not the case with earlier versions, such as naming the Panopto session
+  according to the Hitchcock title and mirroring the description.
+
+## [2.2.1] - development release
 Themed interface
 
 ### New functions
