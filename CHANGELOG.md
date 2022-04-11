@@ -9,6 +9,9 @@ Batch save and update
   was not the case with earlier versions, such as naming the Panopto session
   according to the Hitchcock title and mirroring the description.
 
+### Improvements
+- Can change what the default text type is in settings
+
 ## [2.2.1] - development release
 Themed interface
 

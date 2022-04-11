@@ -15,6 +15,11 @@ from polymorphic.models import PolymorphicModel
 from .panopto.panopto_oauth2 import PanoptoOAuth2
 from .validators import validate_video, validate_audio, validate_text, validate_barcode, validate_captions
 
+try:
+    DEFAULT_TEXT_TYPE = settings.DEFAULT_TEXT_TYPE
+except AttributeError:
+    DEFAULT_TEXT_TYPE = None
+
 # Obsolete; here for migrations to work
 def audiotrack_upload_path(instance, filename):
     return ''
@@ -89,7 +94,10 @@ class Upload(PolymorphicModel):
     title = models.CharField(max_length=255, unique=True)
     ereserves_record_url = models.URLField(max_length=1024, help_text="Libguides E-Reserves system record", blank=True, null=True)
     barcode = models.CharField(max_length=512, blank=True, null=True, validators=[validate_barcode])
-    form = models.CharField(max_length=16, choices=FORM_TYPES, default='digitized')
+    if DEFAULT_TEXT_TYPE:
+        form = models.CharField(max_length=16, choices=FORM_TYPES, default=DEFAULT_TEXT_TYPE)
+    else:
+        form = models.CharField(max_length=16, choices=FORM_TYPES)
     description = models.TextField(blank=True, null=True, help_text='Publicly visible description, which may be copied to another service such as Panopto')
     notes = models.TextField(blank=True, null=True, help_text='Private notes for library staff')
     modified = models.DateTimeField(auto_now=True)

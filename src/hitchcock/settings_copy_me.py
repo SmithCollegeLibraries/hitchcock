@@ -43,6 +43,7 @@ MEDIA_ROOT = '/vagrant/test-media-dir/'
 AV_SUBDIR_NAME = 'av/'
 AUDIO_ALBUMS_SUBDIR_NAME = 'av/audio-albums/'
 TEXT_SUBDIR_NAME = 'text/'
+DEFAULT_TEXT_TYPE = None  # change this to 'digitized' or 'born_digital' if desired
 # Video, audio, and caption files are saved in subdirs under AV_SUBDIR_NAME
 VIDEO_SUBDIR_NAME = 'video/'
 AUDIO_SUBDIR_NAME = 'audio/'
