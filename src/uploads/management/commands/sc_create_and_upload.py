@@ -119,14 +119,19 @@ Columns:
                             raise VideoSkipped
                         # Add to playlist as well
                         if playlist_name and playlist_order:
-                            if VideoPlaylist.objects.filter(title=playlist_name).exists():
-                                add_video_to_playlist(added_video, playlist_name, playlist_order)
-                                # Keep track of playlists to save, so that
-                                # they can all just be saved at the end
-                                if playlist_name not in playlists_to_save:
-                                    playlists_to_save.append(playlist_name)
-                            else:
-                                print(f"Can't add to playlist {playlist_name} (doesn't exist)")
+                            # Create new video playlist if it doesn't exist already
+                            if not VideoPlaylist.objects.filter(title=playlist_name).exists():
+                                new_playlist = VideoPlaylist(
+                                    title=playlist_name,
+                                    folder=folder,
+                                )
+                                new_playlist.save()
+                            add_video_to_playlist(added_video, playlist_name, playlist_order)
+                            # Keep track of playlists to save, so that
+                            # they can all just be saved at the end
+                            if playlist_name not in playlists_to_save:
+                                playlists_to_save.append(playlist_name)
+
                     except VideoSkipped:
                         log_writer.writerow([
                             *row[0:6],

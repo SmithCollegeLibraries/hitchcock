@@ -7,6 +7,10 @@ Hotfixes
 - Panopto section of upload is no longer collapsed by default
 - Allow .mov video uploads
 
+### Improvements
+- For SC batch upload script, create new playlist if one of the specified
+  name doesn't exist
+
 ## [2.2.2] - development release
 Batch save and update
 
