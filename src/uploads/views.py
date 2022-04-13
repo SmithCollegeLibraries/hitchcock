@@ -203,4 +203,4 @@ def play_audio_playlist(request, pk):
         else:
             raise Http404("Playlist not found")
         return redirect(panopto_url)
-    render_audio_playlist(request, obj)
+    return render_audio_playlist(request, obj)

@@ -13,6 +13,10 @@ Hotfixes
 
 ### Fixes
 - Error no longer appears upon playlist delete
+- Popup to add a new video/audio from within a playlist is no longer empty
+- Following an audio playlist URL no longer throws an error
+- Fixed issue with items not appearing in Panopto after playlist is uploaded
+
 ## [2.2.2] - development release
 Batch save and update
 

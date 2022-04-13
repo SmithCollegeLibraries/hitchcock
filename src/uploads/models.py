@@ -550,7 +550,7 @@ def update_caption_uploads(sender, instance, **kwargs):
 
 @receiver(models.signals.pre_save, sender=AudioPlaylist)
 @receiver(models.signals.pre_save, sender=VideoPlaylist)
-def create_panopto_playlist(sender, instance, **kwargs):
+def recreate_panopto_playlist(sender, instance, **kwargs):
     """If the playlist is brand new, first create the playlist.
     Otherwise, delete the existing playlist, which may have items
     on it that have been taken off.
@@ -571,11 +571,11 @@ def create_panopto_playlist(sender, instance, **kwargs):
     response = requests_session.post(url, data=data)
     instance.panopto_playlist_id = response.json()['Id']
 
-@receiver(models.signals.post_save, sender=AudioPlaylistLink)
-@receiver(models.signals.post_save, sender=VideoPlaylistLink)
+@receiver(models.signals.post_save, sender=AudioPlaylist)
+@receiver(models.signals.post_save, sender=VideoPlaylist)
 def refresh_playlist(sender, instance, **kwargs):
     """Add all the related playlist items on save."""
-    instance.playlist.refresh_playlist_items()
+    instance.refresh_playlist_items()
 
 @receiver(models.signals.post_delete, sender=AudioPlaylist)
 @receiver(models.signals.post_delete, sender=VideoPlaylist)
