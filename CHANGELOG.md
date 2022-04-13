@@ -1,5 +1,11 @@
 # Hitchcock Releases
 
+## [2.2.3] - development release
+Hotfixes
+
+### Changes
+- Allow .mov video uploads
+
 ## [2.2.2] - development release
 Batch save and update
 

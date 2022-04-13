@@ -181,7 +181,7 @@ class Video(Upload):
         upload_to=get_upload_path,
         max_length=1024,
         validators=[validate_video],
-        help_text="mp4 format only",
+        help_text="mp4 or mov format only",
     )
     folder = models.ForeignKey(
         Folder,
