@@ -4,6 +4,7 @@
 Hotfixes
 
 ### Changes
+- Panopto section of upload is no longer collapsed by default
 - Allow .mov video uploads
 
 ## [2.2.2] - development release

@@ -176,7 +176,6 @@ class PanoptoUploadAdmin(UploadChildAdmin):
                 'fields': basic_fields
             }),
             ('Panopto', {
-                'classes': ('collapse',),
                 'fields': panopto_fields,
             }),
             ('Details', {
@@ -286,7 +285,6 @@ class PlaylistAdmin(PolymorphicChildModelAdmin):
             'fields': basic_fields,
         }),
         ('Panopto', {
-            'classes': ('collapse',),
             'fields': (
                 'panopto_playlist_id',
                 'description',
