@@ -585,8 +585,8 @@ def remove_panopto_playlist(sender, instance, **kwargs):
     """
     instance.delete_panopto_playlist()
 
-@receiver(models.signals.post_delete, sender=AudioPlaylist)
-@receiver(models.signals.post_delete, sender=VideoPlaylist)
+@receiver(models.signals.post_delete, sender=AudioPlaylistLink)
+@receiver(models.signals.post_delete, sender=VideoPlaylistLink)
 def remove_deleted_item_from_playlist(sender, instance, **kwargs):
     """Whenever an audio/video is taken off a playlist, the link
     between them is deleted. This needs to be reflected in the

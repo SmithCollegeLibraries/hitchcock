@@ -11,6 +11,8 @@ Hotfixes
 - For SC batch upload script, create new playlist if one of the specified
   name doesn't exist
 
+### Fixes
+- Error no longer appears upon playlist delete
 ## [2.2.2] - development release
 Batch save and update
 
