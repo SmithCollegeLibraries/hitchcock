@@ -1,5 +1,12 @@
 # Hitchcock Releases
 
+## [2.2.4] - development release
+URL view/copy buttons for playlists
+
+### Improvements
+- Playlists now have buttons for copying and viewing the URL, just as
+  audio, video and text uploads did before
+
 ## [2.2.3] - development release
 Hotfixes
 

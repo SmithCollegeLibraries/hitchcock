@@ -299,6 +299,17 @@ class PlaylistAdmin(PolymorphicChildModelAdmin):
         }),
     )
 
+    class Media:
+        js = ('uploads/js/uploads-admin.js',)
+
+    def url(self, obj):
+        if obj.url is not None:
+            url_field = '<span id="hitchcock-url">{url}</span> &nbsp; <a href="{url}" target="_blank">view <i class="fas fa-external-link-alt" style="font-size: 12px;"></i></a> | <a href="#" id="copy-url-button">copy <i class="far fa-clipboard"></i></a>'
+            field_display_string = mark_safe(url_field.format(url=obj.url))
+            return field_display_string
+        else:
+            return '-'
+
 
 @admin.register(AudioPlaylist)
 class AudioPlaylistAdmin(PlaylistAdmin):
