@@ -28,15 +28,18 @@ def audiotrack_upload_path(instance, filename):
 def text_upload_path(instance, filename):
     return ''
 
-def shorten_name(s):
+def shorten_name(title):
     """Shorten a slugified filename, so that it is well within the
     filepath limit.
     """
+    s = slugify(title)
     if isinstance(s, str) and len(s) > 40:
         s = s[:40]
-        if s[-1] == '-':
+        while len(s) >= 1 and s[-1] == '-':
             s = s[:-1]
-    return s
+    if s == '':
+        s = 'untitled'
+    return str(s)
 
 # Current upload path function for all objects
 def get_upload_path(instance, filename):
@@ -65,7 +68,7 @@ def get_upload_path(instance, filename):
     storage = instance.upload.storage
     extension = os.path.splitext(filename)[1]
     # Slugify the title and add the extension from the filename
-    valid_filename = storage.get_valid_name(shorten_name(slugify(instance.title))) + extension.lower()
+    valid_filename = storage.get_valid_name(shorten_name(instance.title)) + extension.lower()
     proposed_path = subdir + f'{datetime.today().year}/' + valid_filename
     available_filename = storage.get_available_name(proposed_path)
     return available_filename
@@ -496,7 +499,7 @@ def rename_or_delete_if_necessary(sender, instance, **kwargs):
     """If a file has a name that doesn't match the current title
     upon saving, rename the file. Delete a file that has been changed.
     """
-    if slugify(instance.title) not in instance.upload.name:
+    if shorten_name(instance.title) not in instance.upload.name:
         instance.rename_upload()
 
 # Add tag to Panopto session when Hitchcock entry is deleted
