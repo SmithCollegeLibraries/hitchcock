@@ -1,5 +1,11 @@
 # Hitchcock Releases
 
+## [2.2.5] - 2022-05-10
+
+### Changes
+
+Use shorter filenames for uploads, truncating from the title if necessary
+
 ## [2.2.4] - 2022-04-13
 URL view/copy buttons for playlists
 

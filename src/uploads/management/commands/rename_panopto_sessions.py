@@ -28,7 +28,7 @@ class Command(BaseCommand):
             '--audio',
             action='store_const',
             const=True,
-            help='Use if you do not want to rename audio instead of video sessions',
+            help='Use if you do want to rename audio instead of video sessions',
         )
 
     def handle(self, *args, **options):
