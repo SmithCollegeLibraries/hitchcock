@@ -46,11 +46,17 @@ def queue_for_processing(modeladmin, request, queryset):
         item.save()
 queue_for_processing.short_description = "(Re)process selected items"
 
-def toggle_panopto_id_lock(modeladmin, request, queryset):
+def lock_panopto_id(modeladmin, request, queryset):
     for item in queryset.all():
-        item.lock_panopto_session_id = not item.lock_panopto_session_id
+        item.lock_panopto_session_id = True
         item.save()
-save_update.short_description = "(Un)lock Panopto ID"
+lock_panopto_id.short_description = "Lock Panopto ID"
+
+def unlock_panopto_id(modeladmin, request, queryset):
+    for item in queryset.all():
+        item.lock_panopto_session_id = False
+        item.save()
+unlock_panopto_id.short_description = "Unlock Panopto ID"
 
 def save_update(modeladmin, request, queryset):
     for item in queryset.all():
@@ -66,7 +72,7 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
     ordering = ('-modified',)
     list_filter = ('published',)
-    actions = [queue_for_processing, toggle_panopto_id_lock, save_update]
+    actions = [queue_for_processing, lock_panopto_id, unlock_panopto_id, save_update]
 
     # Edit the method for getting search results to allow case-insensitive
     # searching of titles
