@@ -46,6 +46,12 @@ def queue_for_processing(modeladmin, request, queryset):
         item.save()
 queue_for_processing.short_description = "(Re)process selected items"
 
+def toggle_panopto_id_lock(modeladmin, request, queryset):
+    for item in queryset.all():
+        item.lock_panopto_session_id = not item.lock_panopto_session_id
+        item.save()
+save_update.short_description = "(Un)lock Panopto ID"
+
 def save_update(modeladmin, request, queryset):
     for item in queryset.all():
         item.save()
@@ -60,7 +66,7 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
     ordering = ('-modified',)
     list_filter = ('published',)
-    actions = [queue_for_processing, save_update]
+    actions = [queue_for_processing, toggle_panopto_id_lock, save_update]
 
     # Edit the method for getting search results to allow case-insensitive
     # searching of titles
@@ -383,7 +389,7 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
     list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size_in_mb', 'published', 'ereserves_record')
     search_fields = ['title', 'barcode', 'ereserves_record_url', 'identifier', 'notes']
     ordering = ('-modified',)
-    actions = [queue_for_processing, save_update]
+    actions = [queue_for_processing, toggle_panopto_id_lock, save_update]
 
     # Edit the method for getting search results to allow case-insensitive
     # searching of titles
