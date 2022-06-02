@@ -188,7 +188,7 @@ class Video(Upload):
         default=settings.UPLOAD_FOLDER_PK,
         on_delete=models.RESTRICT,
     )
-    panopto_session_id = models.CharField("delivery ID of Panopto session", max_length=256, blank=True, null=True)
+    panopto_session_id = models.CharField("delivery ID of Panopto session", max_length=256, blank=False, null=True, unique=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
     tracker = FieldTracker()
@@ -302,7 +302,7 @@ class Audio(Upload):
         default=settings.UPLOAD_FOLDER_PK,
         on_delete=models.RESTRICT,
     )
-    panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
+    panopto_session_id = models.CharField("delivery ID of Panopto session", max_length=256, blank=False, null=True, unique=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
     tracker = FieldTracker()
@@ -511,6 +511,16 @@ def tag_panopto_session_on_delete(sender, instance, skip_verify=False, **kwargs)
             data = {'Tags': tags}
             response = requests_session.put(url, data=data)
             return response
+
+# Change empty string to null on panopto_session_id field before saving,
+# to prevent unique constraint errors
+@receiver(models.signals.pre_save, sender=Video)
+@receiver(models.signals.pre_save, sender=Audio)
+def panopto_session_blank_to_null(sender, instance, **kwargs):
+    """Sets the panopto_session_id field to null when given
+    another falsy value"""
+    if not instance.panopto_session_id:
+        instance.panopto_session_id = None
 
 # Calculate size and save it to the parent Upload object
 @receiver(models.signals.pre_save, sender=Text)
