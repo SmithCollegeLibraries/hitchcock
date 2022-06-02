@@ -1,13 +1,19 @@
 # Hitchcock Releases
 
-## [2.2.4] - development release
+## [2.2.5] - 2022-05-10
+
+### Changes
+
+Use shorter filenames for uploads, truncating from the title if necessary
+
+## [2.2.4] - 2022-04-13
 URL view/copy buttons for playlists
 
 ### Improvements
 - Playlists now have buttons for copying and viewing the URL, just as
   audio, video and text uploads did before
 
-## [2.2.3] - development release
+## [2.2.3] - 2022-04-13
 Hotfixes
 
 ### Changes
@@ -24,7 +30,7 @@ Hotfixes
 - Following an audio playlist URL no longer throws an error
 - Fixed issue with items not appearing in Panopto after playlist is uploaded
 
-## [2.2.2] - development release
+## [2.2.2] - 2022-04-11
 Batch save and update
 
 ### New functions
@@ -36,7 +42,7 @@ Batch save and update
 ### Improvements
 - Can change what the default text type is in settings
 
-## [2.2.1] - development release
+## [2.2.1] - 2022-04-08
 Themed interface
 
 ### New functions
@@ -47,7 +53,7 @@ Themed interface
   local environment, test environment, and multiple production environments
   (such as ereserves and general acquisitions).
 
-## [2.2.0] - unreleased
+## [2.2.0] - 2022-04-08
 Human-readable filenames drawn from titles
 
 ### Changes
@@ -61,7 +67,7 @@ Human-readable filenames drawn from titles
 - Files are now sorted into large buckets by year of upload (or last title
   change), to avoid crowding a single directory excessively.
 
-## [2.1.0] - unreleased
+## [2.1.0] - 2022-02-09
 More support for Panopto integration
 
 ### New functions
