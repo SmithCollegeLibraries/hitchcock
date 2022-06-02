@@ -204,7 +204,7 @@ class Video(Upload):
     panopto_session_id = models.CharField("delivery ID of Panopto session", max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
-    tracker = FieldTracker()
+    tracker = FieldTracker(fields=['title', 'folder', 'description'])
 
     @property
     def url(self):
@@ -318,7 +318,7 @@ class Audio(Upload):
     panopto_session_id = models.CharField("delivery ID of Panopto session", max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
-    tracker = FieldTracker()
+    tracker = FieldTracker(fields=['title', 'folder', 'description'])
 
     @property
     def url(self):
@@ -362,7 +362,7 @@ class Playlist(PolymorphicModel):
 
 
 class AudioPlaylist(Playlist):
-    tracker = FieldTracker()
+    tracker = FieldTracker(fields=['title', 'folder', 'description'])
     av = models.ManyToManyField(
         Audio,
         through='AudioPlaylistLink',
@@ -384,7 +384,7 @@ class AudioPlaylist(Playlist):
 
 
 class VideoPlaylist(Playlist):
-    tracker = FieldTracker()
+    tracker = FieldTracker(fields=['title', 'folder', 'description'])
     av = models.ManyToManyField(
         Video,
         through='VideoPlaylistLink',
@@ -578,7 +578,7 @@ def recreate_panopto_playlist(sender, instance, **kwargs):
     data = {
         'Name': instance.title,
         'Description': instance.description,
-        'FolderId': instance.folder.panopto_folder_id,
+        'Folder': instance.folder.panopto_folder_id,
         'Sessions': [],  # We will add the sessions later
     }
     response = requests_session.post(url, data=data)
@@ -634,13 +634,10 @@ def update_folder_on_panopto(sender, instance, **kwargs):
     """When an AV object or playlist has its title, folder or
     description changed, update it on Panopto.
     """
-    previous_title = instance.tracker.previous('title')
-    previous_description = instance.tracker.previous('description')
-    previous_folder = instance.tracker.previous('folder')
     # Update if either the folder or the description has changed
-    if ((previous_title and instance.title != previous_title)
-            or (previous_description and instance.description != previous_description)
-            or (previous_folder and instance.folder.panopto_folder_id != previous_folder.panopto_folder_id)):
+    if (instance.tracker.has_changed('title')
+            or instance.tracker.has_changed('description')
+            or instance.tracker.has_changed('folder')):
         requests_session = create_panopto_requests_session()
         if sender is Audio or sender is Video:
             url_end = f'sessions/{instance.panopto_session_id}'
@@ -652,7 +649,7 @@ def update_folder_on_panopto(sender, instance, **kwargs):
         data = {
             'Name': instance.title,
             'Description': instance.description,
-            'FolderId': instance.folder.panopto_folder_id,
+            'Folder': instance.folder.panopto_folder_id,
         }
         response = requests_session.put(url, data)
         return response
