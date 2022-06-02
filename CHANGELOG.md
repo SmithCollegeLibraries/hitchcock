@@ -1,5 +1,21 @@
 # Hitchcock Releases
 
+## [2.2.6] - 2022-06-02
+
+### Fixes
+- Corrected the connection to Panopto so that when the folder on an
+  audio, video, or playlist upload is changed, it is correctly uploaded
+  to Panopto
+
+
+### New functions
+- Added dropdown functions for "Lock Panopto ID" and "Unlock Panopto ID"
+  for audio and video uploads (not accessible from All Uploads view)
+
+### Improvements
+- Relabeled "Panopto session id" to "Delivery ID of Panopto session"
+  for clarity
+
 ## [2.2.5] - 2022-05-10
 
 ### Changes
