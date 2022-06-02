@@ -389,7 +389,7 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
     list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size_in_mb', 'published', 'ereserves_record')
     search_fields = ['title', 'barcode', 'ereserves_record_url', 'identifier', 'notes']
     ordering = ('-modified',)
-    actions = [queue_for_processing, toggle_panopto_id_lock, save_update]
+    actions = [queue_for_processing, save_update]
 
     # Edit the method for getting search results to allow case-insensitive
     # searching of titles
