@@ -188,7 +188,7 @@ class Video(Upload):
         default=settings.UPLOAD_FOLDER_PK,
         on_delete=models.RESTRICT,
     )
-    panopto_session_id = models.CharField(max_length=256, blank=True, null=True)
+    panopto_session_id = models.CharField("delivery ID of Panopto session", max_length=256, blank=True, null=True)
     processing_status = models.CharField(max_length=256, blank=True, null=True)
     lock_panopto_session_id = models.BooleanField(default=False)
     tracker = FieldTracker()
