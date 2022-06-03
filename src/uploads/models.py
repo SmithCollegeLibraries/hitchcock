@@ -578,7 +578,7 @@ def recreate_panopto_playlist(sender, instance, **kwargs):
     data = {
         'Name': instance.title,
         'Description': instance.description,
-        'Folder': instance.folder.panopto_folder_id,
+        'FolderId': instance.folder.panopto_folder_id,
         'Sessions': [],  # We will add the sessions later
     }
     response = requests_session.post(url, data=data)

@@ -2,6 +2,9 @@
 
 ## [2.2.7] - 2022-06-03
 
+### Fixes
+- Corrected incorrect request to Panopto on playlist upload
+
 ### New functions
 - Allow changing folder on playlists after creation
 
