@@ -235,7 +235,7 @@ class PanoptoUploadAdmin(UploadChildAdmin):
             # Now add folder to the list of readonly fields if an upload
             # is actively underway (i.e. it has started processing but
             # there is not yet a session ID)
-            if not obj.processing_status and not obj.panopto_session_id:
+            if obj.processing_status and not obj.panopto_session_id:
                 new_readonly_fields.append('folder')
             return new_readonly_fields
 
