@@ -165,7 +165,7 @@ class PanoptoUploadAdmin(UploadChildAdmin):
             'upload',
             'published',
         ]
-        if obj is None or obj.panopto_session_id is None:
+        if obj is None or not obj.processing_status:
             basic_fields.append('upload_to_panopto')
         # Hide the Folder field unless there is more than one
         try:

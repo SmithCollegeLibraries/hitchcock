@@ -1,12 +1,18 @@
 # Hitchcock Releases
 
+## [2.2.7] - 2022-06-03
+
+### Improvements
+
+- Hide "Upload to Panopto" checkbox if an upload is already underway,
+  to prevent duplicate uploads
+
 ## [2.2.6] - 2022-06-02
 
 ### Fixes
 - Corrected the connection to Panopto so that when the folder on an
   audio, video, or playlist upload is changed, it is correctly uploaded
   to Panopto
-
 
 ### New functions
 - Added dropdown functions for "Lock Panopto ID" and "Unlock Panopto ID"
