@@ -157,7 +157,16 @@ class AudioAdminForm(forms.ModelForm):
         fields = "__all__"
 
 class PanoptoUploadAdmin(UploadChildAdmin):
-    readonly_fields = ['size_in_mb', 'created', 'modified', 'identifier', 'url', 'panopto_session_id', 'processing_status', 'queued_for_processing']
+    readonly_fields = [
+        'size_in_mb',
+        'created',
+        'modified',
+        'identifier',
+        'url',
+        'panopto_session_id',
+        'processing_status',
+        'queued_for_processing',
+    ]
     def get_fieldsets(self, request, obj=None):
         basic_fields = [
             'title',
@@ -176,12 +185,12 @@ class PanoptoUploadAdmin(UploadChildAdmin):
         basic_fields.append('url')
         basic_fields.append('notes')
 
-        panopto_fields = (
+        panopto_fields = [
             'panopto_session_id',
             'processing_status',
             'queued_for_processing',
             'description',
-        )
+        ]
 
         fieldsets = (
             (None, {
@@ -205,8 +214,12 @@ class PanoptoUploadAdmin(UploadChildAdmin):
         return fieldsets
 
     def get_readonly_fields(self, request, obj=None):
-        """Allow editing panopto_session_id when creating. But once it is set,
-        by uploading a panopto session don't allow it to be edited after that.
+        """Allow editing panopto_session_id when creating. But once it
+        is set after a Panopto upload is complete, don't allow it to be
+        edited after that.
+
+        Allow changing a folder as long as an upload is not actively
+        in process.
         """
         # Make a copy of readonly_fields that doesn't have the session id field
         _ = copy.copy(self.readonly_fields)
@@ -215,11 +228,20 @@ class PanoptoUploadAdmin(UploadChildAdmin):
 
         if obj is not None:
             if obj.lock_panopto_session_id is True:
-                return self.readonly_fields
+                new_readonly_fields = self.readonly_fields
             else:
-                return readonly_fields_sans_panopto_session_id
+                new_readonly_fields = readonly_fields_sans_panopto_session_id
+
+            # Now add folder to the list of readonly fields if an upload
+            # is actively underway (i.e. it has started processing but
+            # there is not yet a session ID)
+            if not obj.processing_status and not obj.panopto_session_id:
+                new_readonly_fields.append('folder')
+            return new_readonly_fields
+
         else:
             return readonly_fields_sans_panopto_session_id
+
 
 @admin.register(Video)
 class VideoAdmin(PanoptoUploadAdmin):
@@ -423,20 +445,7 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
 class FolderAdmin(admin.ModelAdmin):
     fields = ('id', 'name', 'panopto_folder_id', 'notes')
     list_display = ('name', 'id', 'panopto_folder_id')
-
-    def get_readonly_fields(self, request, obj=None):
-        """Allow editing panopto_folder_id when creating. But until
-        there is a post_save signal which can move all objects
-        in a folder to the new Panopto folder ID, for now it cannot
-        be changed.
-        """
-        if obj is not None:
-            if obj.panopto_folder_id:
-                return ['id', 'panopto_folder_id']
-            else:
-                return ['id']
-        else:
-            return ['id']
+    readonly_fields = ('id',)
 
 @admin.register(SiteSetting)
 class SiteSettingAdmin(admin.ModelAdmin):

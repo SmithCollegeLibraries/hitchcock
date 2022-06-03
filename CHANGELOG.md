@@ -2,10 +2,15 @@
 
 ## [2.2.7] - 2022-06-03
 
+### New functions
+- Allow changing folder on playlists after creation
+
 ### Improvements
 
 - Hide "Upload to Panopto" checkbox if an upload is already underway,
   to prevent duplicate uploads
+- Don't allow changing folder while an upload is underway, because
+  then it would not be mirrored to Panopto
 
 ## [2.2.6] - 2022-06-02
 
