@@ -11,15 +11,8 @@ from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 
 from uploads.models import Folder, Video, VideoPlaylist, VideoPlaylistLink, Audio, AudioPlaylist, AudioPlaylistLink
-from uploads.management.commands.create_uploads_from_csv import get_location_of_file, add_upload_to_database
+from uploads.management.commands.create_uploads_from_csv import get_location_of_file, add_upload_to_database, is_audio, is_video
 from uploads.panopto.panopto_oauth2 import RefreshAccessTokenFailed
-
-VIDEO_FORMATS = ['.mp4', '.mpeg4', '.mov']
-AUDIO_FORMATS = ['.mp3', '.mpeg3', '.m4a', '.wav']
-def is_audio(s):
-    return os.path.splitext(s)[1] in AUDIO_FORMATS
-def is_video(s):
-    return os.path.splitext(s)[1] in VIDEO_FORMATS
 
 
 class UploadSkipped(Exception):

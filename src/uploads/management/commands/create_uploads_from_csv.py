@@ -14,6 +14,15 @@ from uploads.models import Audio, Video
 
 LOGFILE = 'log.txt'
 
+def is_audio(s):
+    AUDIO_FORMATS = ['.mp3', '.mpeg3', '.m4a', '.wav']
+    return os.path.splitext(s)[1] in AUDIO_FORMATS
+
+def is_video(s):
+    VIDEO_FORMATS = ['.mp4', '.mpeg4', '.mov']
+    return os.path.splitext(s)[1] in VIDEO_FORMATS
+
+
 def get_location_of_file(directory, filename, extension='mp4'):
     '''Returns the actual verified path of the video/audio, or None
     if no such file exists (or it is not found).
@@ -129,6 +138,7 @@ Columns:
                     file_name = os.path.split(file_location)[1]
                     # Results of video add saved in "skipped"
                     added_upload = add_upload_to_database(
+                        type="audio" if is_audio(file_name) else "video",
                         title=title,
                         # specifying the name is needed so that the file
                         # goes in the media folder, rather than attempting
