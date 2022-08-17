@@ -115,7 +115,7 @@ Columns:
 
                     try:
                         added_upload = add_upload_to_database(
-                            type="audio" if is_audio(file_name) else "video",
+                            "audio" if is_audio(file_name) else "video",
                             title=title,
                             # specifying the name is needed so that the file
                             # goes in the media folder, rather than attempting

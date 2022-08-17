@@ -56,15 +56,15 @@ def get_panopto_session_id(url):
     else:
         return re.match(r'.*\?id=(.*)', url).group(1)
 
-def add_upload_to_database(**kwargs):
-    """kwargs["type"] is either "video" or "audio" """
+def add_upload_to_database(upload_type, **kwargs):
+    """The type parameter is either "video" or "audio" """
     try:
         if 'panopto_session_id' in kwargs and kwargs['panopto_session_id']:
             kwargs['lock_panopto_session_id'] = True
         else:
             kwargs['queued_for_processing'] = True
             kwargs['processing_status'] = "Added to queue, waiting for file to be uploaded to Panopto"
-        if kwargs['type'] == 'audio':
+        if upload_type == 'audio':
             new_upload = Audio(**kwargs)
         else:
             new_upload = Video(**kwargs)
@@ -138,7 +138,7 @@ Columns:
                     file_name = os.path.split(file_location)[1]
                     # Results of video add saved in "skipped"
                     added_upload = add_upload_to_database(
-                        type="audio" if is_audio(file_name) else "video",
+                        "audio" if is_audio(file_name) else "video",
                         title=title,
                         # specifying the name is needed so that the file
                         # goes in the media folder, rather than attempting
