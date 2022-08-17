@@ -8,9 +8,8 @@ from math import floor, ceil
 
 from django.core.files import File
 from django.core.management.base import BaseCommand
-from django.db.utils import IntegrityError
 
-from uploads.models import Folder, Video, VideoPlaylist, VideoPlaylistLink, Audio, AudioPlaylist, AudioPlaylistLink
+from uploads.models import Folder, VideoPlaylist, VideoPlaylistLink, AudioPlaylist, AudioPlaylistLink
 from uploads.management.commands.create_uploads_from_csv import get_location_of_file, add_upload_to_database, is_audio, is_video
 from uploads.panopto.panopto_oauth2 import RefreshAccessTokenFailed
 
@@ -116,6 +115,7 @@ Columns:
 
                     try:
                         added_upload = add_upload_to_database(
+                            type="audio" if is_audio(file_name) else "video",
                             title=title,
                             # specifying the name is needed so that the file
                             # goes in the media folder, rather than attempting
