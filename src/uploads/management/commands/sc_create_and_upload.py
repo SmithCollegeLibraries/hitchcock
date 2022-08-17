@@ -1,8 +1,6 @@
 import csv
 import cv2
 import os.path
-import re
-import shutil
 
 from datetime import datetime
 from hitchcock import settings
@@ -12,14 +10,30 @@ from django.core.files import File
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 
-from uploads.models import Folder, Video, VideoPlaylist, VideoPlaylistLink
-from uploads.management.commands.create_uploads_from_csv import get_location_of_file, add_video_to_database
+from uploads.models import Folder, Video, VideoPlaylist, VideoPlaylistLink, Audio, AudioPlaylist, AudioPlaylistLink
+from uploads.management.commands.create_uploads_from_csv import get_location_of_file, add_upload_to_database
 from uploads.panopto.panopto_oauth2 import RefreshAccessTokenFailed
 
+VIDEO_FORMATS = ['.mp4', '.mpeg4', '.mov']
+AUDIO_FORMATS = ['.mp3', '.mpeg3', '.m4a', '.wav']
+def is_audio(s):
+    return os.path.splitext(s)[1] in AUDIO_FORMATS
+def is_video(s):
+    return os.path.splitext(s)[1] in VIDEO_FORMATS
 
-class VideoSkipped(Exception):
+
+class UploadSkipped(Exception):
     pass
 
+
+def add_audio_to_playlist(upload_object, playlist_title, playlist_order):
+    playlist_to_add_to = AudioPlaylist.objects.get(title=playlist_title)
+    new_playlist_link = AudioPlaylistLink(
+        av=upload_object,
+        playlist=playlist_to_add_to,
+        playlist_order=playlist_order,
+    )
+    new_playlist_link.save()
 
 def add_video_to_playlist(upload_object, playlist_title, playlist_order):
     playlist_to_add_to = VideoPlaylist.objects.get(title=playlist_title)
@@ -40,7 +54,7 @@ def seconds_to_minutes_seconds(time_in_s):
 
 
 class Command(BaseCommand):
-    help = '''Add the videos in the spreadsheet given to the database.
+    help = '''Add the uploads in the spreadsheet given to the database.
 Columns:
    0 - Filepath
    1 - Title
@@ -48,7 +62,7 @@ Columns:
    3 - Visibility (Open access, Smith only, Private)
    4 - Playlist_name
    5 - Playlist_order
-   5 - Hitchcock_video_ID (will be provided)
+   5 - Hitchcock_video_ID or Hitchcock_audio_ID (will be provided)
    6 - Hitchcock_URL (will be provided)
    7 - Video duration (will be provided)
 '''
@@ -66,7 +80,8 @@ Columns:
                     f'--{datetime.now():%Y-%m-%d--%H-%M}' +
                     '.csv')
 
-        playlists_to_save = []
+        audio_playlists_to_save = []
+        video_playlists_to_save = []
 
         # Now open the spreadsheet and start processing the items in it
         with open(spreadsheet_path) as f, open(log_path, 'w') as logfile:
@@ -95,16 +110,19 @@ Columns:
                     # Split off the filename proper from the path
                     file_name = os.path.split(file_location)[1]
 
-                    # Capture video duration
-                    # https://stackoverflow.com/a/61572332/2569052
-                    cap = cv2.VideoCapture(file_location)
-                    fps = cap.get(cv2.CAP_PROP_FPS)
-                    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-                    video_duration_in_s = frame_count / fps
+                    if is_video(file_name):
+                        # Capture video duration
+                        # https://stackoverflow.com/a/61572332/2569052
+                        cap = cv2.VideoCapture(file_location)
+                        fps = cap.get(cv2.CAP_PROP_FPS)
+                        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                        video_duration_in_s = frame_count / fps if fps else 0
+                    else:
+                        video_duration_in_s = 0
                     video_duration = seconds_to_minutes_seconds(video_duration_in_s)
 
                     try:
-                        added_video = add_video_to_database(
+                        added_upload = add_upload_to_database(
                             title=title,
                             # specifying the name is needed so that the file
                             # goes in the media folder, rather than attempting
@@ -115,24 +133,39 @@ Columns:
                             folder=folder,
                             panopto_session_id=panopto_session_id,
                         )
-                        if not added_video:
-                            raise VideoSkipped
+                        if not added_upload:
+                            raise UploadSkipped
                         # Add to playlist as well
                         if playlist_name and playlist_order:
-                            # Create new video playlist if it doesn't exist already
-                            if not VideoPlaylist.objects.filter(title=playlist_name).exists():
-                                new_playlist = VideoPlaylist(
-                                    title=playlist_name,
-                                    folder=folder,
-                                )
-                                new_playlist.save()
-                            add_video_to_playlist(added_video, playlist_name, playlist_order)
-                            # Keep track of playlists to save, so that
-                            # they can all just be saved at the end
-                            if playlist_name not in playlists_to_save:
-                                playlists_to_save.append(playlist_name)
+                            if is_audio(file_name):
+                                # Create new playlist if it doesn't exist already
+                                if not AudioPlaylist.objects.filter(title=playlist_name).exists():
+                                    new_playlist = AudioPlaylist(
+                                        title=playlist_name,
+                                        folder=folder,
+                                    )
+                                    new_playlist.save()
+                                add_audio_to_playlist(added_upload, playlist_name, playlist_order)
+                                # Keep track of playlists to save, so that
+                                # they can all just be saved at the end
+                                if playlist_name not in audio_playlists_to_save:
+                                    audio_playlists_to_save.append(playlist_name)
 
-                    except VideoSkipped:
+                            elif is_video(file_name):
+                                # Create new playlist if it doesn't exist already
+                                if not VideoPlaylist.objects.filter(title=playlist_name).exists():
+                                    new_playlist = VideoPlaylist(
+                                        title=playlist_name,
+                                        folder=folder,
+                                    )
+                                    new_playlist.save()
+                                add_video_to_playlist(added_upload, playlist_name, playlist_order)
+                                # Keep track of playlists to save, so that
+                                # they can all just be saved at the end
+                                if playlist_name not in video_playlists_to_save:
+                                    video_playlists_to_save.append(playlist_name)
+
+                    except UploadSkipped:
                         log_writer.writerow([
                             *row[0:6],
                             'SKIPPED',
@@ -154,13 +187,20 @@ Columns:
                     # the file.
                         log_writer.writerow([
                             *row[0:6],
-                            added_video.id,
-                            f'{settings.BASE_URL}/videos/{str(added_video.id)}',
+                            added_upload.id,
+                            f'{settings.BASE_URL}/videos/{str(added_upload.id)}',
                             video_duration,
                         ])
                         os.remove(file_location)
 
         # Now save all the playlists
-        for playlist_name in playlists_to_save:
-            playlist_object = VideoPlaylist.objects.get(title=playlist_name)
-            playlist_object.save()
+        for playlist_name in audio_playlists_to_save:
+            # If it's an audio
+            audio_playlist_object = AudioPlaylist.objects.filter(title=playlist_name).first()
+            if audio_playlist_object:
+                audio_playlist_object.save()
+        for playlist_name in video_playlists_to_save:
+            # If it's a video
+            video_playlist_object = VideoPlaylist.objects.filter(title=playlist_name).first()
+            if video_playlist_object:
+                video_playlist_object.save()

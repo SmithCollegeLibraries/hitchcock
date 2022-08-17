@@ -10,13 +10,13 @@ from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 
 from uploads import tasks
-from uploads.models import Video
+from uploads.models import Audio, Video
 
 LOGFILE = 'log.txt'
 
 def get_location_of_file(directory, filename, extension='mp4'):
-    '''Returns the actual verified path of the video, or None if
-    no such file exists (or it is not found).
+    '''Returns the actual verified path of the video/audio, or None
+    if no such file exists (or it is not found).
     '''
     # Add extension if not provided
     if '.' not in filename:
@@ -47,31 +47,35 @@ def get_panopto_session_id(url):
     else:
         return re.match(r'.*\?id=(.*)', url).group(1)
 
-def add_video_to_database(**kwargs):
+def add_upload_to_database(**kwargs):
+    """kwargs["type"] is either "video" or "audio" """
     try:
         if 'panopto_session_id' in kwargs and kwargs['panopto_session_id']:
             kwargs['lock_panopto_session_id'] = True
         else:
             kwargs['queued_for_processing'] = True
             kwargs['processing_status'] = "Added to queue, waiting for file to be uploaded to Panopto"
-        new_video = Video(**kwargs)
-        new_video.save()
+        if kwargs['type'] == 'audio':
+            new_upload = Audio(**kwargs)
+        else:
+            new_upload = Video(**kwargs)
+        new_upload.save()
         # Upload to Panopto if it was marked as queued for processing
-        if new_video.queued_for_processing:
-            tasks.upload_to_panopto(str(new_video.id))
-        return new_video
+        if new_upload.queued_for_processing:
+            tasks.upload_to_panopto(str(new_upload.id))
+        return new_upload
     except IntegrityError:
-        print(f"Cannot add a video with duplicate title {new_video.title}.")
+        print(f"Cannot add an upload with duplicate title {new_upload.title}.")
         new_title = input("Please enter new title, or ENTER to skip: ")
         if not new_title:
             return None
         else:
             kwargs['title'] = new_title
-            return add_video_to_database(**kwargs)
+            return new_upload(**kwargs)
 
 
 class Command(BaseCommand):
-    help = '''Add the videos in the spreadsheet given to the database.
+    help = '''Add the audios/videos in the spreadsheet given to the database.
 Columns:
    0 - Timestamp
    1 - Date processed
@@ -124,7 +128,7 @@ Columns:
                     # Split off the filename proper from the path
                     file_name = os.path.split(file_location)[1]
                     # Results of video add saved in "skipped"
-                    added_video = add_video_to_database(
+                    added_upload = add_upload_to_database(
                         title=title,
                         # specifying the name is needed so that the file
                         # goes in the media folder, rather than attempting
@@ -134,7 +138,7 @@ Columns:
                         description='',
                         panopto_session_id=get_panopto_session_id(upload_url),
                     )
-                    if added_video:
+                    if added_upload:
                         # Log the filename added to Hitchcock and delete file
                         # from import location
                         logfile.write(file_location + '\n')
