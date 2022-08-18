@@ -1,5 +1,13 @@
 # Hitchcock Releases
 
+## [2.2.8] - 2022-08-18
+
+### Improvements
+
+- Allowed SC batch upload script to work with audio uploads and playlists
+  in addition to video
+- Updated version of Django
+
 ## [2.2.7] - 2022-06-03
 
 ### Fixes
