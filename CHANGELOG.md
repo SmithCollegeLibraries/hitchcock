@@ -1,5 +1,12 @@
 # Hitchcock Releases
 
+## [2.2.9] - 2022-09-07
+
+### Fixes
+- Escape ampersand character and replace angle brackets with square
+  brackets in title and description when uploading to Panopto, to
+  avoid errors with Panopto's API
+
 ## [2.2.8] - 2022-08-18
 
 ### Improvements
