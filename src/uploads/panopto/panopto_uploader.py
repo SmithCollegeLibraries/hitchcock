@@ -173,19 +173,23 @@ class PanoptoUploader:
         # Use a human-readable title if it's available; otherwise,
         # just use the filename minus the extension.
         if upload_title:
-            raw_title = upload_title
+            title = upload_title
         else:
-            raw_title = os.path.splitext(file_name)[0]
+            title = os.path.splitext(file_name)[0]
 
-        # Escape ampersands and angle brackets
-        title = raw_title.replace('&', '&#38;').replace('<', '&#60;').replace('>', '&#62;')
-        description = upload_description.replace('&', '&#38;').replace('<', '&#60;').replace('>', '&#62;')
+        # Escape ampersands and replace angle brackets
+        title = title.replace('&', '&#38;')
+        upload_description = upload_description.replace('&', '&#38;')
+        # Replace angle brackets with square brackets so that they don't
+        # get treated as HTML tags by Panopto
+        title = title.replace('<', '[').replace('>', ']')
+        upload_description = upload_description.replace('<', '[').replace('>', ']')
 
         with open(MANIFEST_FILE_TEMPLATE) as fr:
             template = fr.read()
         content = template\
         .replace('{Title}', title)\
-        .replace('{Description}', description)\
+        .replace('{Description}', upload_description)\
         .replace('{Filename}', file_name)\
         .replace('{Date}', datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f-00:00'))
         with codecs.open(manifest_file_name, 'w', 'utf-8') as fw:
