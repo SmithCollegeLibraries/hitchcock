@@ -66,9 +66,16 @@ def get_upload_path(instance, filename):
 
     # Reimplement filename sanitization, and collision avoidance
     storage = instance.upload.storage
+    original_name_without_ext = os.path.splitext(filename)[0]
     extension = os.path.splitext(filename)[1]
     # Slugify the title and add the extension from the filename
-    valid_filename = storage.get_valid_name(shorten_name(instance.title)) + extension.lower()
+
+    # Only use title for those types of uploads that actually have titles --
+    # not VTT tracks, for instance!
+    if isinstance(instance, Text) or isinstance(instance, Video) or isinstance(instance, Video):
+        valid_filename = storage.get_valid_name(shorten_name(instance.title)) + extension.lower()
+    else:
+        valid_filename = storage.get_valid_name(shorten_name(original_name_without_ext)) + extension.lower()
     proposed_path = subdir + f'{datetime.today().year}/' + valid_filename
     available_filename = storage.get_available_name(proposed_path)
     return available_filename
@@ -494,7 +501,6 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
 @receiver(models.signals.post_save, sender=Text)
 @receiver(models.signals.post_save, sender=Video)
 @receiver(models.signals.post_save, sender=Audio)
-@receiver(models.signals.post_save, sender=VttTrack)
 def rename_or_delete_if_necessary(sender, instance, **kwargs):
     """If a file has a name that doesn't match the current title
     upon saving, rename the file. Delete a file that has been changed.
