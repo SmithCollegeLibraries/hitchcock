@@ -72,7 +72,7 @@ def get_upload_path(instance, filename):
 
     # Only use title for those types of uploads that actually have titles --
     # not VTT tracks, for instance!
-    if isinstance(instance, Text) or isinstance(instance, Video) or isinstance(instance, Video):
+    if hasattr(instance, 'title'):
         valid_filename = storage.get_valid_name(shorten_name(instance.title)) + extension.lower()
     else:
         valid_filename = storage.get_valid_name(shorten_name(original_name_without_ext)) + extension.lower()
