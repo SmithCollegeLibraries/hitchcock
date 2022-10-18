@@ -1,5 +1,11 @@
 # Hitchcock Releases
 
+## [2.2.10] - 2022-10-18
+
+### Fixes
+- Avoid errors when uploading VTT tracks by not looking for a title
+  (since VTT tracks don't have titles)
+
 ## [2.2.9] - 2022-09-07
 
 ### Fixes
