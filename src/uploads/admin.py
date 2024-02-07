@@ -49,6 +49,8 @@ queue_for_processing.short_description = "(Re)process selected items"
 def lock_panopto_id(modeladmin, request, queryset):
     for item in queryset.all():
         item.lock_panopto_session_id = True
+        item.processing_status = "Manually uploaded to Panopto"
+        item.queued_for_processing = False
         item.save()
 lock_panopto_id.short_description = "Lock Panopto ID"
 
