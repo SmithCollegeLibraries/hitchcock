@@ -41,8 +41,8 @@ def bytes_to_mb(byte_number):
 def queue_for_processing(modeladmin, request, queryset):
     for item in queryset.all():
         tasks.upload_to_panopto(str(item.id))
-        item.processing_status="Added to queue, waiting for file to be uploaded to Panopto"
-        item.queued_for_processing=True
+        item.processing_status = "Added to queue, waiting for file to be uploaded to Panopto"
+        item.queued_for_processing = True
         item.save()
 queue_for_processing.short_description = "(Re)process selected items"
 
@@ -121,7 +121,7 @@ class VideoInline(SortableInlineAdminMixin, admin.TabularInline):
     autocomplete_fields = ['av']
 
 class VideoAdminForm(forms.ModelForm):
-    upload_to_panopto = forms.BooleanField(label='Upload to Panopto', required=False, initial=True)
+    upload_to_panopto = forms.BooleanField(label='Upload to Panopto', required=False, initial=False)
 
     def save(self, commit=True):
         upload_to_panopto = self.cleaned_data.get('upload_to_panopto', None)
