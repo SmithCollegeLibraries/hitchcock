@@ -19,7 +19,7 @@ def is_audio(s):
     return os.path.splitext(s)[1] in AUDIO_FORMATS
 
 def is_video(s):
-    VIDEO_FORMATS = ['.mp4', '.mpeg4', '.mov']
+    VIDEO_FORMATS = ['.mp4', '.mpeg4', '.mov', '.mkv']
     return os.path.splitext(s)[1] in VIDEO_FORMATS
 
 

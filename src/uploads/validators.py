@@ -9,7 +9,7 @@ def validate_text(field):
 
 def validate_video(field):
     ext = os.path.splitext(field.name)[-1]
-    valid_extensions = ['.mp4', '.mpeg4', '.mov']
+    valid_extensions = ['.mp4', '.mpeg4', '.mov', '.mkv']
     if not ext.lower() in valid_extensions:
         raise ValidationError(f'Unsupported file extension. Must be one of {", ".join(valid_extensions)}.')
 

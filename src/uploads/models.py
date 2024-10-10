@@ -201,7 +201,7 @@ class Video(Upload):
         upload_to=get_upload_path,
         max_length=1024,
         validators=[validate_video],
-        help_text="mp4 or mov format only",
+        help_text="mp4 format preferred",
     )
     folder = models.ForeignKey(
         Folder,
@@ -262,7 +262,7 @@ class VttTrack(models.Model):
         upload_to=get_upload_path,
         max_length=1024,
         validators=[validate_captions],
-        help_text="vtt format only",
+        help_text="vtt format preferred",
     )
     type = models.CharField(
         max_length=20,
