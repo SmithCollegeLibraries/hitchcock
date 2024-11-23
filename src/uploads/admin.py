@@ -68,7 +68,7 @@ class UploadChildAdmin(PolymorphicChildModelAdmin):
     """ Base admin class for all child models """
 
     base_model = Upload  # Optional, explicitly set here.
-    search_fields = ['title', 'barcode', 'ereserves_record_url', 'upload', 'identifier', 'notes']
+    search_fields = ['title', 'barcode', 'item_record_url', 'upload', 'identifier', 'notes']
     list_display = ( 'title', 'barcode', 'created', 'modified', 'size_in_mb', 'published')
     ordering = ('-modified',)
     list_filter = ('published',)
@@ -172,6 +172,8 @@ class PanoptoUploadAdmin(UploadChildAdmin):
             'title',
             'form',
             'upload',
+            'barcode',
+            'item_record_url',
             'published',
         ]
         if obj is None or not obj.processing_status:
@@ -203,8 +205,6 @@ class PanoptoUploadAdmin(UploadChildAdmin):
                 'classes': ('collapse',),
                 'fields': (
                     'identifier',
-                    'ereserves_record_url',
-                    'barcode',
                     'size_in_mb',
                     'created',
                     'modified',
@@ -276,7 +276,7 @@ class TextAdmin(UploadChildAdmin):
         }),
         ('Details', {
             'classes': ('collapse',),
-            'fields': ('identifier', 'ereserves_record_url', 'barcode', 'size_in_mb', 'modified', 'created'),
+            'fields': ('identifier', 'size_in_mb', 'modified', 'created'),
         }),
     )
     list_filter = ('published', 'text_type')
@@ -400,9 +400,9 @@ class MissingEReservesRecordFilter(admin.SimpleListFilter):
 
     def queryset(self, request, queryset):
         if self.value() == 'Empty':
-            return Upload.objects.filter(ereserves_record_url__isnull=True)
+            return Upload.objects.filter(item_record_url__isnull=True)
         if self.value() == 'Filled':
-            return Upload.objects.filter(ereserves_record_url__isnull=False)
+            return Upload.objects.filter(item_record_url__isnull=False)
 
 @admin.register(Upload)
 class UploadParentAdmin(PolymorphicParentModelAdmin):
@@ -414,8 +414,8 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
         MissingEReservesRecordFilter,
         'published',
     )
-    list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size_in_mb', 'published', 'ereserves_record')
-    search_fields = ['title', 'barcode', 'ereserves_record_url', 'identifier', 'notes']
+    list_display = ( 'title', 'type', 'barcode', 'created', 'modified', 'size_in_mb', 'published',)
+    search_fields = ['title', 'barcode', 'item_record_url', 'identifier', 'notes']
     ordering = ('-modified',)
     actions = [queue_for_processing, save_update]
 
@@ -435,11 +435,6 @@ class UploadParentAdmin(PolymorphicParentModelAdmin):
 
     def type(self, obj):
         return obj.polymorphic_ctype
-
-    def ereserves_record(self, obj):
-        if obj is not None:
-            if obj.ereserves_record_url is not None:
-                return mark_safe("<a href='%s'>record</a>" % obj.ereserves_record_url)
 
 @admin.register(Folder)
 class FolderAdmin(admin.ModelAdmin):
