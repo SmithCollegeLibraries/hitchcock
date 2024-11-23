@@ -38,8 +38,8 @@ DATABASES = {
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
-STATIC_URL = '/static/'
-MEDIA_ROOT = '/vagrant/test-media-dir/'
+STATIC_URL = 'static/'
+MEDIA_ROOT = 'vagrant/test-media-dir/'
 AV_SUBDIR_NAME = 'av/'
 AUDIO_ALBUMS_SUBDIR_NAME = 'av/audio-albums/'
 TEXT_SUBDIR_NAME = 'text/'
