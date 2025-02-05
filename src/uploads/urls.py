@@ -59,7 +59,7 @@ router.register(r'uploads', UploadViewSet)
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
-urlpatterns = [
+urlpatterns += [
     path('', include(router.urls)),
     path('auth/', obtain_auth_token, name='auth'),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
