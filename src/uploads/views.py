@@ -1,16 +1,26 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import redirect, get_object_or_404
 from django.http import Http404, HttpResponse
 from django.conf import settings
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.contrib.auth import authenticate
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.models import User
 from django.contrib.admin.views.decorators import staff_member_required
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.views.generic.list import ListView
+from rest_framework import serializers
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
 from .models import Video, Audio, VideoPlaylist, AudioPlaylist, Text, Upload, SiteSetting
-import uuid
 from .panopto import panopto_oauth2
 from html_sanitizer import Sanitizer
+
 html_sanitizer = Sanitizer()
 html = html_sanitizer.sanitize
+
 
 def shib_bounce(request):
     """This view is for bouncing the user to the desired location after they
@@ -103,6 +113,26 @@ class FacultyListInventory(LoginRequiredMixin, ListView):
 
         context['query'] = self.query
         return context
+
+class LoginSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("username", "password")
+
+class LoginAPIView(APIView):
+    serializer_class = LoginSerializer
+    authentication_classes = [TokenAuthentication]
+
+    def post(self, request):
+        serializer = LoginSerializer(data = request.data)
+        if serializer.is_valid(raise_exception=True):
+            user = authenticate(username=serializer.data['username'], password=serializer.data['password'])
+            if user:
+                token, created = Token.objects.get_or_create(user=user)
+                return Response({'token': [token.key], "Success": "Login successful"}, status=status.HTTP_201_CREATED )
+            return Response({'Login unsuccessful': 'Invalid username and password'}, status=401)
+
+
 
 def staff_view_unpublished(render_func):
     """ Decorator for checking whether an item is unpublished.
