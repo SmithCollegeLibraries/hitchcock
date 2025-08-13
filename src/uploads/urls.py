@@ -49,7 +49,7 @@ class UploadViewSet(viewsets.ModelViewSet):
         queryset = Upload.objects.all().order_by('title')
         title = self.request.query_params.get('title')
         if title is not None:
-            queryset = queryset.filter(title__contains=title)
+            queryset = queryset.filter(title__iregex=title)
         return queryset
 
 
