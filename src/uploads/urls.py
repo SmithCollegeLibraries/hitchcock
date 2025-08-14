@@ -1,5 +1,5 @@
 from . import views
-from .models import Upload
+from .models import Upload, Video, Audio, Text
 from django.urls import path, include
 from rest_framework import routers, serializers, viewsets
 from rest_framework.authtoken.views import obtain_auth_token
@@ -46,7 +46,17 @@ class UploadViewSet(viewsets.ModelViewSet):
     serializer_class = UploadSerializer
 
     def get_queryset(self):
-        queryset = Upload.objects.all().order_by('title')
+        type = self.request.query_params.get('type')
+        if type == 'video':
+            queryset = Video.objects.all().order_by('title')
+        elif type == 'audio':
+            queryset = Audio.objects.all().order_by('title')
+        elif type == 'text':
+            queryset = Text.objects.all().order_by('title')
+        else:
+            # Default to Upload model if no type is specified
+            queryset = Upload.objects.all().order_by('title')
+
         title = self.request.query_params.get('title')
         if title is not None:
             queryset = queryset.filter(title__lower__regex=title.lower())
