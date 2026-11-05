@@ -11,9 +11,7 @@ class Command(BaseCommand):
         parser.add_argument('id_list', nargs='+', type=str)
 
     def handle(self, *args, **options):
-        id_list = [id for id in options['id_list'][0].split(',')]
-
-        for id in id_list:
+        for id in options['id_list']:
             try:
                 upload_to_delete = Upload.objects.get(id=id)
                 upload_to_delete.delete()
